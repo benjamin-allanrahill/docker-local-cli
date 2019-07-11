@@ -3,7 +3,8 @@
 # Low level module to run configurations in docker container 
 # Benjamin Allan-Rahill
 
-import colors, subprocess, os.path
+import subprocess, os.path, sys
+from colors import color
 
 def startContainer(image):
     docker_start_container = (
@@ -18,16 +19,60 @@ def startContainer(image):
     #print(docker_start_container)
     _evalOrDie(docker_start_container)
 
-def pullImage(image="rr:Genomics2019-03_all"):
+def pullImage(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"):
+    # check to see if the image is present
+    if testImagePresence(image):
+        pass
+    else:
+        pull_cmd = f"docker pull {image}"
+        print(f"Attempting to pull  image [{image}] from the registry")
+        _evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
+        
+def testImagePresence(image_name):
+    #get repo 
+    vals = image_name.split(':')
+    registry = vals[0]
+    port = vals[1].split('/')[0]
+    repo = vals[1].split('/')[1]
+    tag = vals[2]
+    image = f"{registry}:{port}/{repo}"
+    print(f"REPO: {repo}")
+    print(f"TAG: {tag}")
+    find_tag_cmd = f"docker images | awk '2=={tag}'"
 
-    pull_cmd = f"docker pull docker.rdcloud.bms.com:443/{image}"
-    print(f"Attempting image [{image}] from the registry")
-    _evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
 
-def _evalOrDie(cmd, msg="ERROR"):
-    try:
-        res = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-        return res
-    except subprocess.CalledProcessError as cmd_exp:
-        print(colors.color(msg, fg='yellow'))
-        print(colors.color(cmd_exp.output, fg='red'))
+    res, code = _evalOrDie(find_tag_cmd, ignore=True)
+    print(res, code)
+    res = res.split()
+    if code == 0:
+        print(f"Found image [{color(image, fg='blue')}] with tag [{color(tag, fg='blue')}]")
+        return True
+    else:
+        return False
+        # TODO: Add check for other images 
+        # search for repo images
+        # grep_cmd = 
+     
+    
+
+def _evalOrDie(cmd, msg="ERROR:", ignore=False):
+        proc = subprocess.Popen(cmd, shell=True, stdout = subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+
+        if proc.returncode != 0 and not ignore:
+            print(color(msg, fg="yellow"))
+            err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(cmd, proc.returncode, stdout, stderr)
+            sys.exit(err_str)
+            # sys.exit()
+
+        return stdout, proc.returncode
+
+# See here https://gist.github.com/garrettdreyfus/8153571 
+def _yes_or_no(question):
+    reply = str(raw_input(question+' (y/n): ')).lower().strip()
+    if reply[:1] == 'y':
+        return True
+    if reply[:1] == 'n':
+        return False
+    else:
+        return yes_or_no("Uhhhh... please enter ")
