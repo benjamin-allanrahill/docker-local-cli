@@ -5,28 +5,41 @@
 
 import subprocess, os.path, sys
 from colors import color
+from eval import evalOrDie, yes_or_no
+from docker_container import Container
 
-def startContainer(image):
-    docker_start_container = (
-                               "docker run " 
-                                "--cap-add=SYS_ADMIN " 
-                                "--device=/dev/fuse " 
-                                "--security-opt=apparmor:unconfined "
-                                "--cap-add=DAC_READ_SEARCH "
-                                "-d -p 2222:22 -p 8787:8787 "
-                                f"{image}"
-    )
-    #print(docker_start_container)
-    _evalOrDie(docker_start_container)
+def createAndRun(image):
+    # check to see if the image is local
+    if testImagePresence(image):
+        container = Container(image)
+        
+        # test to see if they already have one running
+        if container.isRunning():
+            print(f"You already have a container running with the image [{color(container.image, fg='blue')}]")
+            pass
+        print("No running containers of this image found. \nStarting new container")
+        container.startContainer()
+        print(f"Your container is now running with ID: {container.cid}")
+    else:
+        pullImage(image)
+        createAndRun(image)
+
+## JUST FOR TESTING!! ##
+def testContainer(image):
+    c = Container(image)
+    print("Starting container")
+    c.startContainer()
+    print(f"Is the container running?  {c.isRunning()}")
+    print("exec in!")
+    c.execute('echo HELLO')
+    c.cp('eval.py', '/tmp/eval.py')
+    print("Going to remove container")
+    c.remove()
 
 def pullImage(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"):
-    # check to see if the image is present
-    if testImagePresence(image):
-        pass
-    else:
-        pull_cmd = f"docker pull {image}"
-        print(f"Attempting to pull  image [{image}] from the registry")
-        _evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
+    pull_cmd = f"docker pull {image}"
+    print(f"Attempting to pull  image [{image}] from the registry")
+    evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
         
 def testImagePresence(image_name):
     #get repo 
@@ -38,10 +51,10 @@ def testImagePresence(image_name):
     image = f"{registry}:{port}/{repo}"
     print(f"REPO: {repo}")
     print(f"TAG: {tag}")
-    find_tag_cmd = f"docker images | awk '2=={tag}'"
+    find_tag_cmd = f"docker images | awk '/$2=={tag}$/ {{f  = 1}}; END {{ exit !f }}'"
 
 
-    res, code = _evalOrDie(find_tag_cmd, ignore=True)
+    res, code = evalOrDie(find_tag_cmd, ignore=True)
     print(res, code)
     res = res.split()
     if code == 0:
@@ -53,26 +66,36 @@ def testImagePresence(image_name):
         # search for repo images
         # grep_cmd = 
      
-    
+def findSimilarImages(image):
+    vals = image.split(':')
+    registry = vals[0]
+    port = vals[1].split('/')[0]
+    repo = vals[1].split('/')[1]
+    tag = vals[2]
+    image = f"{registry}:{port}/{repo}"
 
-def _evalOrDie(cmd, msg="ERROR:", ignore=False):
-        proc = subprocess.Popen(cmd, shell=True, stdout = subprocess.PIPE)
-        stdout, stderr = proc.communicate()
+    grep_cmd = f"docker images | grep {image} | awk '{{print $1; print $2; print $3}}'"
 
-        if proc.returncode != 0 and not ignore:
-            print(color(msg, fg="yellow"))
-            err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(cmd, proc.returncode, stdout, stderr)
-            sys.exit(err_str)
-            # sys.exit()
+    # have to 'ignore' error codes when using grep so the program doesnt quit when no match is made
+    res, code = evalOrDie(grep_cmd, "There was an error trying to find similar images")
 
-        return stdout, proc.returncode
-
-# See here https://gist.github.com/garrettdreyfus/8153571 
-def _yes_or_no(question):
-    reply = str(raw_input(question+' (y/n): ')).lower().strip()
-    if reply[:1] == 'y':
-        return True
-    if reply[:1] == 'n':
-        return False
+    if res != '' and code == 0:
+        info = res.replace('\n', ' ').split()
+        print("Found these images under the same repository:" + * (f"\t{info[i*3]}" for i in range(len(info) // 3)))
+        answ = yes_or_no("would you like to run one of these? (y/n)")
+        if answ:
+            chooseImage()
     else:
-        return yes_or_no("Uhhhh... please enter ")
+        print("There were no similar images found")
+
+def chooseImage(images):
+    questions = [
+        {
+            'type': 'list',
+            'name': 'image',
+            'message': 'Which image do you want to run?',
+            Separator('= IMAGES ='),
+            'choices' = [images[i] for i in range(len(images))]
+        }
+    ]
+    answers = prompt(questions)
