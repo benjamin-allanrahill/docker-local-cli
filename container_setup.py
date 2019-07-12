@@ -101,3 +101,6 @@ def chooseImage(images):
         }
     ]
     answers = prompt(questions)
+
+def setupStash(container):
+    container.cpTo("./startup.py", "/tmp/")
