@@ -82,7 +82,12 @@ class Container(object):
     def stop(self):
         print("Gracefully stopping the container...")
         docker_stop_cmd = f"docker stop {self.cid}"
-        evalOrDie(docker_stop_cmd, "There was an error stopping the container")    
+        evalOrDie(docker_stop_cmd, "There was an error stopping the container")
+
+    def kill(self):
+        print("Killing the container...")
+        docker_kill_cmd = f"docker kill {self.cid}"
+        evalOrDie(docker_kill_cmd, "There was an error killing the container")    
 
     def remove(self):    
         #check if it is running
