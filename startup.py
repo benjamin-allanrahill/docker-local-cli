@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os.environ, sys, re
+import os, sys, re
 import subprocess as sp
 
 #so can do git operations (git clone, etc.) as the user via that user's ssh key
