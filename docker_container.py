@@ -15,7 +15,7 @@ class Container(object):
         self.r_port = r_port
     
     # methods
-    def startContainer(self):
+    def startContainer(self, mode='d'):
         if self.isImageRunning():
             print("You already have this image running..")
             if yes_or_no("Do you want to use this container? "):
@@ -29,7 +29,7 @@ class Container(object):
                                     "--device=/dev/fuse " 
                                     "--security-opt=apparmor:unconfined "
                                     "--cap-add=DAC_READ_SEARCH "
-                                    f"-d -p 2222:22 -p {self.r_port}:8787 "
+                                    f"-{mode} -p 2222:22 -p {self.r_port}:8787 "
                                     f"{self.image}"
         )
         #print(docker_start_container)
@@ -55,18 +55,18 @@ class Container(object):
         evalOrDie(docker_cp_cmd)
 
     def cpFrom(self, file_path, dest):
-    docker_cp_cmd = (
-                    "docker cp "
-                    f"{self.cid[:3]}:{file_path} "
-                    f"{dest}"
-    )
-    evalOrDie(docker_cp_cmd)
+        docker_cp_cmd = (
+                        "docker cp "
+                        f"{self.cid[:3]}:{file_path} "
+                        f"{dest}"
+        )
+        evalOrDie(docker_cp_cmd)
 
     def isImageRunning(self):
-        find_img_cmd = f"docker ps | awk '$2==\"{self.image}\"'"
+        find_img_cmd = f"docker ps | awk '$2==\"{self.image}\" {{f  = 1}}; END {{ exit !f }}'"
         print(find_img_cmd)
         res, code = callWithPipe(find_img_cmd, ignore=True)
-        print(repr(res))
+        print(res)
         res = shlex.split(res)
         print(res, code)
         return True if code == 0 else False 
