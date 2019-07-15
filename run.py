@@ -8,9 +8,10 @@ from colors import color
 from eval import evalOrDie, yes_or_no, callWithPipe
 from docker_container import Container
 
-def createAndRun(image, r_port='8787'):
+def createAndRun(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", r_port='8787', mode='d', keypath="/.ssh/"):
     # check to see if the image is local
     if testImagePresence(image):
+        print("You have this image on your machine")
         container = Container(image, r_port=r_port)
         
         # test to see if they already have one running
@@ -19,25 +20,17 @@ def createAndRun(image, r_port='8787'):
             return
         else:
             print("No running containers of this image found. \nStarting new container")
-            container.startContainer()
+            container.startContainer(mode)
             print(f"Your container is now running with ID: {container.cid}")
-            print(f"Access {color("RStudio", fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{r_port}")
+            #set up ssh
+            sshSetup(container, keypath)
+            #set up stash
+            print("Trying to set up stash")
+            setupStash(container)
+            print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{r_port}")
     else:
         pullImage(image)
         createAndRun(image)
-
-## JUST FOR TESTING!! ##
-def testContainer(image):
-    c = Container(image)
-    print("Starting container")
-    c.startContainer()
-    print(f"Is the container running?  {c.isRunning()}")
-    print("exec in!")
-    c.execute('echo HELLO')
-    c.cpTo('eval.py', '/tmp/eval.py')
-    print("Copied!")
-    print("Going to remove container")
-    c.remove()
 
 def pullImage(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"):
     pull_cmd = f"docker pull {image}"
@@ -104,3 +97,12 @@ def chooseImage(images):
 
 def setupStash(container):
     container.cpTo("./startup.py", "/tmp/")
+    container.execute('chmod +x /tmp/startup.py')
+    container.execute("python /tmp/startup.py")
+
+    # TODO: Copy ssh keys 
+
+def sshSetup(container, keypath):
+    container.cpTo(keypath, "/home/domino/.ssh/")
+    # append public key to authorized keys 
+    container.execute(f"cat {keypath}/id_rsa.pub >> /home/domino/.ssh/authorized_keys")
