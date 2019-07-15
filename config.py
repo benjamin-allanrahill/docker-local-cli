@@ -2,7 +2,7 @@
 import re, os.path
 
 class config(object):
-    PKG_NAME        = 'prodcli'
+    PKG_NAME        = 'dockercli'
     HERE            = os.path.abspath(os.path.dirname(__file__))
     
     PATTERN         = r'^{target}\s*=\s*([\'"])(.+)\1$'
@@ -10,14 +10,14 @@ class config(object):
     DOCSTRING       = re.compile(r'^([\'"])\1\1(.+)\1\1\1$', re.M)
     VERSION         = re.compile(PATTERN.format(target='__version__'), re.M)
     
-    # FIELDSURL = 'https://dashboard.pri.bms.com:8443/rest/api/latest/field'
-    # ISSUEURL  = 'https://dashboard.pri.bms.com:8443/rest/api/latest/issue'
+    FIELDSURL = 'https://dashboard.pri.bms.com:8443/rest/api/latest/field'
+    ISSUEURL  = 'https://dashboard.pri.bms.com:8443/rest/api/latest/issue'
 
-    # # JIRA application account credentials
-    # JIRA_UN = "purrapp"
-    # JIRA_PW = "purrapp123"
+    # JIRA application account credentials
+    JIRA_UN = "purrapp"
+    JIRA_PW = "purrapp123"
 
-    # APP_DIR = "/home01/ec2_user/russom/dev/purr3/"
+    APP_DIR = "/home01/ec2_user/russom/dev/purr3/"
         
     proxies         = {'http':'proxy-server.bms.com:8080','https':'proxy-server.bms.com:8080'}
     
