@@ -8,7 +8,7 @@ from colors import color
 from eval import evalOrDie, yes_or_no, callWithPipe
 from docker_container import Container
 
-def createAndRun(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", r_port='8787', mode='d', keypath="/.ssh/"):
+def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", r_port='8787', mode='d', keypath="/.ssh/"):
     # check to see if the image is local
     if testImagePresence(image):
         print("You have this image on your machine")
@@ -23,7 +23,7 @@ def createAndRun(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", r_po
             container.startContainer(mode)
             print(f"Your container is now running with ID: {container.cid}")
             #set up ssh
-            sshSetup(container, keypath)
+            sshSetup(container, keypath, user)
             #set up stash
             print("Trying to set up stash")
             setupStash(container)
@@ -95,14 +95,20 @@ def chooseImage(images):
     ]
     answers = prompt(questions)
 
-def setupStash(container):
+def setupStash(container,user):
     container.cpTo("./startup.py", "/tmp/")
     container.execute('chmod +x /tmp/startup.py')
     container.execute("python /tmp/startup.py")
 
     # TODO: Copy ssh keys 
 
-def sshSetup(container, keypath):
-    container.cpTo(keypath, "/home/domino/.ssh/")
+def sshSetup(container, keypath, user):
+    container.cpTo(f"{keypath}id_rsa", f"/home/domino/.ssh/id_rsa_{user}")
+    container.cpTo(f"{keypath}id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
     # append public key to authorized keys 
-    container.execute(f"cat {keypath}/id_rsa.pub >> /home/domino/.ssh/authorized_keys")
+    container.execute(f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
+
+def getPorts(cid):
+    docker_port_cmd = f"docker port {cid}"
+
+    ports = 
