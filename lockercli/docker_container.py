@@ -7,15 +7,15 @@ class Container(object):
     # instance vars 
     image = ''
     cid = ''
-    r_port = '8787'
+    ports = {'ssh': '2222', 'r':'8787'}
     created = ''
 
-    def __init__(self, image='', cid='', r_port='8787', created = ''):
+    def __init__(self, image='', cid='', ports={'ssh': '2222', 'r':'8787'}, created = ''):
         self.image = image
         self.cid = cid
-        self.r_port = r_port
+        self.ports = ports
         self.created = created
-        
+
     # methods
     def startContainer(self, mode='d'):
         if self.isImageRunning():
@@ -31,7 +31,7 @@ class Container(object):
                                     "--device=/dev/fuse " 
                                     "--security-opt=apparmor:unconfined "
                                     "--cap-add=DAC_READ_SEARCH "
-                                    f"-{mode} -p 2222:22 -p {self.r_port}:8787 "
+                                    f"-{mode} -p {self.ports['ssh']}:22 -p {self.ports['r']}:8787 "
                                     f"{self.image}"
         )
         #print(docker_start_container)
