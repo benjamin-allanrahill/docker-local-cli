@@ -10,7 +10,7 @@ class Container(object):
     ports = {'ssh': '2222', 'r':'8787'}
     created = ''
 
-    def __init__(self, image='', cid='', ports={'ssh': '2222', 'r':'8787'}, created = ''):
+    def __init__(self, image='', cid='', ports={'22': '2222', '8787':'8787'}, created = ''):
         self.image = image
         self.cid = cid
         self.ports = ports
@@ -31,7 +31,7 @@ class Container(object):
                                     "--device=/dev/fuse " 
                                     "--security-opt=apparmor:unconfined "
                                     "--cap-add=DAC_READ_SEARCH "
-                                    f"-{mode} -p {self.ports['ssh']}:22 -p {self.ports['r']}:8787 "
+                                    f"-{mode} -p {self.ports['22']}:22 -p {self.ports['8787']}:8787 "
                                     f"{self.image}"
         )
         #print(docker_start_container)

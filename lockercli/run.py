@@ -10,7 +10,8 @@ from docker_container import Container
 
 running_containers = []
 
-def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'ssh': '2222', 'r':'8787'}, mode='d', keypath="/.ssh/"):
+def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22': '2222', '8787': '8787'}, mode='d', keypath="/.ssh/", running_conts=[]):
+    running_containers= running_conts
     # check to see if the image is local
     if testImagePresence(image):
         print("You have this image on your machine")
@@ -29,7 +30,7 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
             #set up stash
             print("Trying to set up stash")
             setupStash(container)
-            print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['r']}")
+            print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['8787']}")
     else:
         pullImage(image)
         createAndRun(image)
@@ -110,9 +111,3 @@ def sshSetup(container, keypath, user):
     # append public key to authorized keys 
     container.execute(f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
 
-def getPorts(cid):
-    docker_port_cmd = f"docker port {cid}"
-
-    ports = evalOrDie(docker_port_cmd, "There was an error getting the ports")[0]
-
-    return ports.split()
