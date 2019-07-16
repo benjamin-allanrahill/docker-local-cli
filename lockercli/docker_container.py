@@ -106,14 +106,13 @@ class Container(object):
             docker_rm_command = f"docker rm {self.cid}"
             evalOrDie(docker_rm_command, "There was an error removing the container")
 
-    def changePortsRand(self, used):
-        print(self.ports)
-        for cport, lport in self.ports.items():
-            print(cport)    
-            random_port = str(random.randint(3000, 9000))
+    def changePortsRand(self, used, port):
+        print(self.ports[port])
+        random_port = str(random.randint(3000, 9000))
 
-            if random_port in used:
-                random_port = str(int(random_port) + 1)
-            else:
-                self.ports[cport] = random_port
-                print(f"The new port for {cport}/tcp is: {random_port}")
+        if random_port in used:
+            random_port = str(int(random_port) + 1)
+        else:
+            self.ports[port] = random_port
+            print(f"The new port for {cport}/tcp is: {random_port}")
+    
