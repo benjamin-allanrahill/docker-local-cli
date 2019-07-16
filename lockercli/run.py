@@ -21,11 +21,15 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         if container.isImageRunning():
             print(f"You already have a container running with the image [{color(container.image, fg='blue')}]")
             y = yes_or_no("Do you want to create another container with the same image?")
-            if y:
-                print("You will have to change the ports. Doing so randomly now..")
-                container.changePortsRand(usedPorts(running_containers))
+            if not y:
+                return
         else:
             print("No running containers of this image found. \nStarting new container")
+        
+        
+        ## CHECK & CHANGE PORTS ##
+        checkPorts(usedPorts(), container)
+
 
         ## START CONTAINER ##
         container.startContainer(mode)
@@ -123,7 +127,14 @@ def usedPorts(container_list):
     for c in container_list:
         used.append(c.ports[key] for key in c.ports.keys())
     print("USED PORTS: ")
-    
+    print(used)
     return used
+
+def checkPorts(allocated, container):
+    for key in container.ports.keys():
+        if ports[key] in allocated:
+            print(f"The port {color(ports[key], fg='red')} is already allocated")
+            print(color("Changing the port randomly now...", fg='yellow'))
+
 
 
