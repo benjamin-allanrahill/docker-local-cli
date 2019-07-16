@@ -3,7 +3,7 @@
 # Low level module to run configurations in docker container 
 # Benjamin Allan-Rahill
 
-import subprocess, os.path, sys, socket, random
+import subprocess, os.path, sys, socket
 from colors import color
 from eval import evalOrDie, yes_or_no, callWithPipe
 from docker_container import Container
@@ -117,5 +117,13 @@ def sshSetup(container, keypath, user):
     container.cpTo(f"{keypath}id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
     # append public key to authorized keys 
     container.execute(f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
+
+def usedPorts(container_list):
+    used = []
+    for c in container_list:
+        used.append(c.ports[key] for key in c.ports.keys())
+    print("USED PORTS: ")
+    
+    return used
 
 

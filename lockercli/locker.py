@@ -20,7 +20,7 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('--ports', dest='ports', nargs=2, default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on.")
+    run_parser.add_argument('--ports', dest='ports', nargs=2, default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', default='~/.ssh/', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
@@ -55,7 +55,7 @@ def main():
         # run the command
         #functions[cmd]
         if cmd == 'run':
-            createAndRun(image=args.image, ports=args.ports, mode=args.mode, keypath=args.keypath, user=args.user, running_conts=allContainers(plusStopped=False))
+            createAndRun(image=args.image, ports={'22': args.ports[0], '8787': args.ports[1]}, mode=args.mode, keypath=args.keypath, user=args.user, running_conts=allContainers(plusStopped=False))
         elif cmd == 'stop':
             stop([getContainers(args)], mode=args.halt)
         elif cmd == 'clean-up':

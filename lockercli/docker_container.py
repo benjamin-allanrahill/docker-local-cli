@@ -1,5 +1,5 @@
 from eval import evalOrDie, yes_or_no, callWithPipe
-import shlex
+import shlex, random
 
 class Container(object):
     
@@ -20,11 +20,6 @@ class Container(object):
     def startContainer(self, mode='d'):
         if self.isImageRunning():
             print("You already have this image running..")
-            if yes_or_no("Do you want to use this container? "):
-                self.cid = callWithPipe(f"docker ps | awk '$2==\"{self.image}\" {{ print $1}}'", ignore=True)[0]
-            else:
-                print("Ports are already allocated. You have to change them to start a new container")
-            return 
         docker_start_container = (
                                 "docker run " 
                                     "--cap-add=SYS_ADMIN " 
@@ -111,12 +106,13 @@ class Container(object):
             docker_rm_command = f"docker rm {self.cid}"
             evalOrDie(docker_rm_command, "There was an error removing the container")
 
-    def changePortsRand():
-        for cport in self.ports:
-            print(cport)
+    def changePortsRand(self, used):
+        print(self.ports)
+        for cport, lport in self.ports.items():
+            print(cport)    
             random_port = str(random.randint(3000, 9000))
 
-            if random_port == self.ports[cport]:
+            if random_port in used:
                 random_port = str(int(random_port) + 1)
             else:
                 self.ports[cport] = random_port
