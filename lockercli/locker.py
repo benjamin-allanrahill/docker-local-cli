@@ -20,7 +20,7 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('--ports', dest='ports', nargs=2, default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', default='~/.ssh/', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
@@ -113,6 +113,9 @@ def getPorts(cid):
             port_dict[c_port] = l_port
 
     return port_dict
+
+def parsePorts(ports)
+    ports = ports.
             
 if __name__ == "__main__":
     main()
