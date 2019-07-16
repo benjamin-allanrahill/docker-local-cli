@@ -3,7 +3,7 @@
 # docker_local_cli.py
 # high level script for CLI
 
-import argparse
+import argparse, re
 from add import add
 from cleanup import cleanup
 from docker_container import Container
@@ -20,7 +20,7 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('--ports', dest='ports', nargs=2 default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on.")
+    run_parser.add_argument('--ports', dest='ports', nargs=2, default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on.")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', default='~/.ssh/', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
@@ -48,13 +48,6 @@ def main():
     args = parser.parse_args()
 
     print(args)
-
-    # functions = {   'run': createAndRun(image=args.image, r_port=args.ports, mode=args.mode, keypath=args.keypath),
-    #                 'stop': stop(getContainers(), args.halt),
-    #                 'clean-up': cleanup(getContainers(), args.quiet),
-    #                 'drop-in': dropIn(getContainers(), args.cmd, args.mode),
-    #                 'add': add(args.source, args.dest, getContainers())
-    # }
 
     if args.subcommand:
         cmd = args.subcommand.lower()
@@ -98,6 +91,25 @@ def allContainers(plusStopped):
         containers[i].created = created[i]
 
     return containers
+
+def getPorts(cid):
+    docker_port_cmd = f"docker port {cid}"
+
+    ports = evalOrDie(docker_port_cmd, "There was an error getting the ports")[0]
+    port_dict = {}
+    port_lines = ports.split('\n')
+    #print(port_lines)
+    for line in port_lines:
+        if line != '':
+            port = line.split('->')
+            #print(port)
+            c_port = port[0].split('/')[0]
+            #print(c_port)
+            l_port = port[1][9:]
+            #print(l_port)
+            port_dict[c_port] = l_port
+
+    return port_dict
             
 if __name__ == "__main__":
     main()
