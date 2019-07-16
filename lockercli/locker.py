@@ -8,7 +8,7 @@ from add import add
 from cleanup import cleanup
 from docker_container import Container
 from dropin import dropIn
-from run import createAndRun
+from run import createAndRun, getPorts
 from stop import stop
 from eval import callWithPipe, evalOrDie
 
@@ -20,7 +20,7 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('--ports', dest='ports', default='8787', help="[Optional] The ports you would like to use to run the servers on.")
+    run_parser.add_argument('--ports', dest='ports', nargs=2 default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on.")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', default='~/.ssh/', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
@@ -84,12 +84,19 @@ def getContainers(args, plusStopped=False):
         return allContainers(plusStopped)[0]
 
 def allContainers(plusStopped):
-    docker_ps_cmd = "docker ps -qa" if plusStopped else "docker ps -q"
-    res, code = evalOrDie(docker_ps_cmd, "There was an error finding all the containers")
-
+    cid_cmd = "docker ps -qa" if plusStopped else "docker ps -q"
+    image_cmd = "docker ps -a | awk '{print $2}'" if plusStopped else "docker ps | awk '{print $2}'"
+    created_cmd = "docker ps -a | awk '{print $4}" if plusStopped else "docker ps | awk '{print $4}"
+    
+    cids = evalOrDie(cid_cmd, "There was an error getting container IDs")[0].split()
+    images = callWithPipe(image_cmd, "There was an error getting the images")[0].split()
+    created = callWithPipe(created_cmd, "There was an error getting the creation data")[0].split()
     print(res)
-    containers = [Container(cid=x) for x in res.split()]
-    print(containers)
+    containers = [Container(cid=x) for x in cids]
+    for i in range(len(containers)):
+        containers[i].image = images[i]
+        containers[i].created = created[i]
+
     return containers
             
 if __name__ == "__main__":

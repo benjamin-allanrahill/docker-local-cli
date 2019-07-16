@@ -10,11 +10,11 @@ from docker_container import Container
 
 running_containers = []
 
-def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", r_port='8787', mode='d', keypath="/.ssh/"):
+def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'ssh': '2222', 'r':'8787'}, mode='d', keypath="/.ssh/"):
     # check to see if the image is local
     if testImagePresence(image):
         print("You have this image on your machine")
-        container = Container(image, r_port=r_port)
+        container = Container(image, ports=ports)
         
         # test to see if they already have one running
         if container.isImageRunning():
@@ -29,7 +29,7 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
             #set up stash
             print("Trying to set up stash")
             setupStash(container)
-            print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{r_port}")
+            print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['r']}")
     else:
         pullImage(image)
         createAndRun(image)
