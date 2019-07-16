@@ -89,6 +89,7 @@ def allContainers(plusStopped):
     for i in range(len(containers)):
         containers[i].image = images[i]
         containers[i].created = created[i]
+        containers[i].ports = getPorts(containers[i].cid)
 
     return containers
 
