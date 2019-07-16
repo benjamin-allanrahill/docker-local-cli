@@ -23,7 +23,7 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
             y = yes_or_no("Do you want to create another container with the same image?")
             if y:
                 print("You will have to change the ports. Doing so randomly now..")
-                container.changePortsRand()
+                container.changePortsRand(usedPorts(running_containers))
         else:
             print("No running containers of this image found. \nStarting new container")
 
