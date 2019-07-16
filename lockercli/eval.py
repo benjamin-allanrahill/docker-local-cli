@@ -28,7 +28,7 @@ def callWithPipe(cmd, msg="ERROR:", ignore=False):
     process_1.stdout.close()
     if process_2.returncode != 0 and not ignore:
         print(color(msg, fg="yellow"))
-        err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(cmd, proc.returncode, stdout, stderr)
+        err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(cmd, process_2.returncode, process_2.stdout, process_2.stderr)
         raise Exception(err_str)
 
     stdout, stderr = process_2.communicate()
