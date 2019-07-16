@@ -10,12 +10,14 @@ from docker_container import Container
 
 running_containers = []
 
-def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22': '2222', '8787': '8787'}, mode='d', keypath="/.ssh/", running_conts=[]):
+def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22': '2222', '8787': '8787'}, mode='d', keypath="/.ssh/", running_conts=[], label='bms'):
     running_containers= running_conts
     # check to see if the image is local
     if testImagePresence(image):
         print("You have this image on your machine")
-        container = Container(image, ports=ports)
+        print("PORTS: ")
+        print(ports)
+        container = Container(image, ports=ports, label=label)
         
         # test to see if they already have one running
         if container.isImageRunning():
@@ -28,7 +30,9 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         
         
         ## CHECK & CHANGE PORTS ##
-        checkPorts(usedPorts(), container)
+        print("PORTS: ")
+        print(container.ports)
+        checkPorts(usedPorts(running_containers), container)
 
 
         ## START CONTAINER ##
@@ -124,17 +128,20 @@ def sshSetup(container, keypath, user):
 
 def usedPorts(container_list):
     used = []
+    print(container_list)
     for c in container_list:
-        used.append(c.ports[key] for key in c.ports.keys())
+        print([port for key in c.ports.keys() for port in c.ports[key]])
+        used += [c.ports[key] for key in c.ports.keys()]
     print("USED PORTS: ")
     print(used)
     return used
 
 def checkPorts(allocated, container):
     for key in container.ports.keys():
-        if ports[key] in allocated:
-            print(f"The port {color(ports[key], fg='red')} is already allocated")
+        if container.ports[key] in allocated:
+            print(f"The port {color(container.ports[key], fg='red')} is already allocated")
             print(color("Changing the port randomly now...", fg='yellow'))
+            container.changePortsRand(allocated, key)
 
 
 

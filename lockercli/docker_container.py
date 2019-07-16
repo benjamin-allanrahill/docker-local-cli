@@ -10,11 +10,12 @@ class Container(object):
     ports = {'ssh': '2222', 'r':'8787'}
     created = ''
 
-    def __init__(self, image='', cid='', ports={'22': '2222', '8787':'8787'}, created = ''):
+    def __init__(self, image='', cid='', ports={'22': '2222', '8787':'8787'}, created = '', label=''):
         self.image = image
         self.cid = cid
         self.ports = ports
         self.created = created
+        self.label = label
 
     # methods
     def startContainer(self, mode='d'):
@@ -26,6 +27,7 @@ class Container(object):
                                     "--device=/dev/fuse " 
                                     "--security-opt=apparmor:unconfined "
                                     "--cap-add=DAC_READ_SEARCH "
+                                    f"-l name={self.label} "
                                     f"-{mode} -p {self.ports['22']}:22 -p {self.ports['8787']}:8787 "
                                     f"{self.image}"
         )
@@ -114,5 +116,5 @@ class Container(object):
             random_port = str(int(random_port) + 1)
         else:
             self.ports[port] = random_port
-            print(f"The new port for {cport}/tcp is: {random_port}")
+            print(f"The new port for {port}/tcp is: {random_port}")
     
