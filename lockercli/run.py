@@ -8,6 +8,8 @@ from colors import color
 from eval import evalOrDie, yes_or_no, callWithPipe
 from docker_container import Container
 
+running_containers = []
+
 def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", r_port='8787', mode='d', keypath="/.ssh/"):
     # check to see if the image is local
     if testImagePresence(image):
@@ -111,4 +113,6 @@ def sshSetup(container, keypath, user):
 def getPorts(cid):
     docker_port_cmd = f"docker port {cid}"
 
-    ports = 
+    ports = evalOrDie(docker_port_cmd, "There was an error getting the ports")[0]
+
+    return ports.split()
