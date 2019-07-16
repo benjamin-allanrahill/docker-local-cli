@@ -3,7 +3,7 @@
 # Low level module to run configurations in docker container 
 # Benjamin Allan-Rahill
 
-import subprocess, os.path, sys, socket
+import subprocess, os.path, sys, socket, random
 from colors import color
 from eval import evalOrDie, yes_or_no, callWithPipe
 from docker_container import Container
@@ -20,17 +20,24 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         # test to see if they already have one running
         if container.isImageRunning():
             print(f"You already have a container running with the image [{color(container.image, fg='blue')}]")
-            return
+            y = yes_or_no("Do you want to create another container with the same image?")
+            if y:
+                print("You will have to change the ports. Doing so randomly now..")
+                container.changePortsRand()
         else:
             print("No running containers of this image found. \nStarting new container")
-            container.startContainer(mode)
-            print(f"Your container is now running with ID: {container.cid}")
-            #set up ssh
-            sshSetup(container, keypath, user)
-            #set up stash
-            print("Trying to set up stash")
-            setupStash(container)
-            print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['8787']}")
+
+        ## START CONTAINER ##
+        container.startContainer(mode)
+        print(f"Your container is now running with ID: {container.cid}")
+        #set up ssh
+        sshSetup(container, keypath, user)
+        #set up stash
+        print("Trying to set up stash")
+        setupStash(container)
+        print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{container.ports['8787']}")
+
+    ## PULL ##    
     else:
         pullImage(image)
         createAndRun(image)
@@ -110,4 +117,5 @@ def sshSetup(container, keypath, user):
     container.cpTo(f"{keypath}id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
     # append public key to authorized keys 
     container.execute(f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
+
 

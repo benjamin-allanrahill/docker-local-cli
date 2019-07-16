@@ -1,4 +1,4 @@
-#!/usr/bin/env python3\
+#!/usr/bin/env python3.6
 
 # docker_local_cli.py
 # high level script for CLI
@@ -8,7 +8,7 @@ from add import add
 from cleanup import cleanup
 from docker_container import Container
 from dropin import dropIn
-from run import createAndRun, getPorts
+from run import createAndRun
 from stop import stop
 from eval import callWithPipe, evalOrDie
 
@@ -55,7 +55,7 @@ def main():
         # run the command
         #functions[cmd]
         if cmd == 'run':
-            createAndRun(image=args.image, r_port=args.ports, mode=args.mode, keypath=args.keypath, user=args.user)
+            createAndRun(image=args.image, ports=args.ports, mode=args.mode, keypath=args.keypath, user=args.user, running_conts=allContainers(plusStopped=False))
         elif cmd == 'stop':
             stop([getContainers(args)], mode=args.halt)
         elif cmd == 'clean-up':
@@ -79,22 +79,24 @@ def getContainers(args, plusStopped=False):
 def allContainers(plusStopped):
     cid_cmd = "docker ps -qa" if plusStopped else "docker ps -q"
     image_cmd = "docker ps -a | awk '{print $2}'" if plusStopped else "docker ps | awk '{print $2}'"
-    created_cmd = "docker ps -a | awk '{print $4}" if plusStopped else "docker ps | awk '{print $4}"
+    created_cmd = "docker ps -a | awk '{print $4}" if plusStopped else "docker ps | awk '{print $4}'"
     
     cids = evalOrDie(cid_cmd, "There was an error getting container IDs")[0].split()
-    images = callWithPipe(image_cmd, "There was an error getting the images")[0].split()
-    created = callWithPipe(created_cmd, "There was an error getting the creation data")[0].split()
-    print(res)
+    images = callWithPipe(image_cmd, "There was an error getting the images", ignore=True)[0].split()[1:]
+    print(images)
+    #created = callWithPipe(created_cmd, "There was an error getting the creation data", ignore=True)[0].split()[1:]
+    #print(created)
+    #print(res)
     containers = [Container(cid=x) for x in cids]
     for i in range(len(containers)):
         containers[i].image = images[i]
-        containers[i].created = created[i]
+        #containers[i].created = created[i]
         containers[i].ports = getPorts(containers[i].cid)
 
     return containers
 
 def getPorts(cid):
-    docker_port_cmd = f"docker port {cid}"
+    docker_port_cmd = f'docker port {cid}'
 
     ports = evalOrDie(docker_port_cmd, "There was an error getting the ports")[0]
     port_dict = {}
