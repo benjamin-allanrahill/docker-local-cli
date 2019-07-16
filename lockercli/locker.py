@@ -20,13 +20,15 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=['2222','8787'], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', '2222'],['8787', '8787']], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', default='~/.ssh/', help='[Optional] The location in which your SSH keys are stored.')
+    run_parser.add_argument('-l','--label', dest='label', default='bms', help='[Optional] The metadata name to give the container')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
     run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
 
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
+    stop_parser.add_argument('--filter', dest='label', help="The meta data name that you would like to filter on EG: bms")
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
     stop_parser.add_argument('--halt', '--slam', dest='halt', default=False, action='store_true', help='[Optional] Force the stop of a running container (uses SIGKILL)')
 
@@ -49,13 +51,16 @@ def main():
 
     print(args)
 
+    
+
     if args.subcommand:
         cmd = args.subcommand.lower()
         
         # run the command
         #functions[cmd]
         if cmd == 'run':
-            createAndRun(image=args.image, ports={'22': args.ports[0], '8787': args.ports[1]}, mode=args.mode, keypath=args.keypath, user=args.user, running_conts=allContainers(plusStopped=False))
+            ports = parsePorts(args.ports)
+            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=args.keypath, user=args.user, running_conts=allContainers(plusStopped=False), label=args.label)
         elif cmd == 'stop':
             stop([getContainers(args)], mode=args.halt)
         elif cmd == 'clean-up':
@@ -69,12 +74,20 @@ def main():
 def getContainers(args, plusStopped=False):
     if hasattr(args, 'container') and args.container != None:
         return Container(cid=args.container)
+    elif hasattr(args, 'label'):
+        print("Filtering containers")
+        return filterContainers(plusStopped, args.label)
     elif hasattr(args, 'all') and args.all:
         print("ALL containers were specified")
         return allContainers(plusStopped)
     else:
         print("Only the latest containers")
-        return allContainers(plusStopped)[0]
+        cid_cmd = "docker ps -q --latest"
+        image_cmd = "docker ps -a --latest | awk '{print $2}'"
+
+        cid = evalOrDie(cid_cmd, "There was an error getting the ID for the latest container")
+        image = callWithPipe(image_cmd, "There was an error getting the IMAGE for the latest container")
+        return Container(image=image, cid=cid)
 
 def allContainers(plusStopped):
     cid_cmd = "docker ps -qa" if plusStopped else "docker ps -q"
@@ -91,6 +104,21 @@ def allContainers(plusStopped):
     for i in range(len(containers)):
         containers[i].image = images[i]
         #containers[i].created = created[i]
+        containers[i].ports = getPorts(containers[i].cid)
+
+    return containers
+
+def filterContainers(plusStopped, label):
+    cid_cmd = f"docker ps -q{'a' if plusStopped else ''} --label name={label}" 
+    image_cmd = f"docker ps {'-a' if plusStopped else ''} --label name={label} | awk '{{print $2}}'"
+    created_cmd = f"docker ps {'-a' if plusStopped else ''} --label name={label} | awk '{{print $4}}"
+    
+    cids = evalOrDie(cid_cmd, "There was an error getting container IDs")[0].split()
+    images = callWithPipe(image_cmd, "There was an error getting the images", ignore=True)[0].split()[1:]
+
+    containers = [Container(cid=x) for x in cids]
+    for i in range(len(containers)):
+        containers[i].image = images[i]
         containers[i].ports = getPorts(containers[i].cid)
 
     return containers
@@ -114,8 +142,15 @@ def getPorts(cid):
 
     return port_dict
 
-def parsePorts(ports)
-    ports = ports.
+def parsePorts(ports):
+    # ports = ports.split(':')
+    pdict = {}
+    for pair in ports:
+        pdict[pair[0]] = pair[1]
+    print(ports)
+    print(pdict)
+
+    return pdict
             
 if __name__ == "__main__":
     main()
