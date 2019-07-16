@@ -8,12 +8,14 @@ class Container(object):
     image = ''
     cid = ''
     r_port = '8787'
+    created = ''
 
-    def __init__(self, image, cid='', r_port='8787'):
+    def __init__(self, image='', cid='', r_port='8787', created = ''):
         self.image = image
         self.cid = cid
         self.r_port = r_port
-    
+        self.created = created
+        
     # methods
     def startContainer(self, mode='d'):
         if self.isImageRunning():
@@ -38,13 +40,14 @@ class Container(object):
     
     def execute(self, cmd, flags=''):
         docker_exec_cmd = (
-                            "docker exec "
-                            f"{flags} "
+                            "exec docker exec "
+                            f"-{flags} "
                             f"{self.cid[:3]} "
                             f"{cmd}"
         )
         print(docker_exec_cmd)
-        evalOrDie(docker_exec_cmd)
+        res, code = evalOrDie(docker_exec_cmd)
+        #print(res)
 
     def cpTo(self, file_path, dest):
         docker_cp_cmd = (
@@ -106,3 +109,4 @@ class Container(object):
                 pass
         else:
             docker_rm_command = f"docker rm {self.cid}"
+            evalOrDie(docker_rm_command, "There was an error removing the container")
