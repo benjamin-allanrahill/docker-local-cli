@@ -1,1 +1,4 @@
 asni-colors
+docker
+pexpect
+paramiko
