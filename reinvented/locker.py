@@ -3,13 +3,18 @@
 # docker_local_cli.py
 # high level script for CLI
 
-import argparse, re, docker
+import argparse, re, docker, platform
 from run import createAndRun
 from eval import callWithPipe, evalOrDie
+from stop import stop
+from cleanup import cleanup
+from dropin import dropIn
+
+d = docker.from_env()
 
 def main():
 
-    d = docker.from_env()
+    
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -17,9 +22,9 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', '2222'],['8787', '8787']], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22/tcp', 2222],['8787/tcp', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
-    run_parser.add_argument('--keys', dest='keypath', default='~/.ssh/', help='[Optional] The location in which your SSH keys are stored.')
+    run_parser.add_argument('--keys', dest='keypath', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('-l','--label', dest='label', default='bms', help='[Optional] The metadata name to give the container')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
     run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
@@ -48,22 +53,25 @@ def main():
 
     print(args)
 
-    
-
     if args.subcommand:
         cmd = args.subcommand.lower()
         
         # run the command
         #functions[cmd]
         if cmd == 'run':
+            if args.keypath != None:
+                keydir = args.keypath
+            else:
+                print("CHANGING TO DEFAULT PATH")
+                keydir = defaultKeyPath(args.user)
             ports = parsePorts(args.ports)
-            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=args.keypath, user=args.user, label={"name": args.label})
+            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=args.user, label={"name": args.label})
         elif cmd == 'stop':
-            stop([getContainers(args)], mode=args.halt)
+            stop(getContainers(args), mode=args.halt)
         elif cmd == 'clean-up':
-            cleanup([getContainers(args, plusStopped=True)], args.quiet)
+            cleanup(getContainers(args, plusStopped=True), args.quiet)
         elif cmd == 'drop-in':
-            dropIn(getContainers(args), args.entrypoint, args.mode)
+            dropIn(getContainers(args)[0], args.entrypoint, args.mode)
         elif cmd == 'add':
             add(args.source, args.dest, getContainers(args))
 
@@ -71,7 +79,8 @@ def main():
 def getContainers(args, plusStopped=False):
     if hasattr(args, 'container') and args.container != None:
         return d.containers.get(args.container)
-    elif hasattr(args, 'label'):
+    elif hasattr(args, 'label') and args.label != None:
+        print(args.label)
         print("Filtering containers")
         return d.containers.list(filters={'name': args.label}, all=plusStopped)
     elif hasattr(args, 'all') and args.all:
@@ -90,6 +99,15 @@ def parsePorts(ports):
     print(pdict)
 
     return pdict
+
+def defaultKeyPath(user):
+    OS = platform.system()
+    if OS == 'Windows':
+        keypath = f'C:/Users/{user}/.ssh/'
+    if OS == 'Darwin' or OS == 'Linux':
+        keypath = f'~/.ssh/'
+    print(f"the ssh path was changed to the deafult {OS} key path")
+    return keypath
             
 if __name__ == "__main__":
     main()
