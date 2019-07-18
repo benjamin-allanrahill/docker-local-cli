@@ -3,18 +3,17 @@
 # Low level module to run configurations in docker container 
 # Benjamin Allan-Rahill
 
-import subprocess, os.path, sys, socket, docker, platform 
+import subprocess, os.path, sys, socket, docker, platform, random 
 from colors import color
 from eval import evalOrDie, yes_or_no, callWithPipe
 from utils import cpFrom, cpTo, execute
+from ssh import copyKeys
 
 running_containers = []
 
 docker = docker.from_env()
 
-OS = platform.system()
-
-def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22/tcp': '2222', '8787/tcp': '8787'}, mode='d', keypath="/.ssh/", label={"name": "bms"}):
+def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22/tcp': 2222, '8787/tcp': 8787}, mode='d', keypath="/.ssh/", label={"name": "bms"}):
     
     # check to see if the image is local
     if testImagePresence(image):
@@ -23,9 +22,9 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         print(ports)
 
         ## CHECK & CHANGE PORTS ##
-        print("PORTS: ")
-        print(ports)
         ports_new = checkPorts(usedPorts(), ports)
+        print("PORTS: ")
+        print(ports_new)
 
         print("LABEL:")
         print(label)
@@ -50,13 +49,14 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         print(f"Your container is now running with ID: {container.id}")
         
         # test execute cmd
-        execute(container, "/bin/bash")
+        #execute(container, "/bin/bash")
 
+        copyKeys(container, keypath, user)
         #set up ssh
-        sshSetup(container, keypath, user)
+        #sshSetup(container, keypath, user)
         #set up stash
         print("Trying to set up stash")
-        setupStash(container)
+        setupStash(container, user)
         print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
 
     ## PULL ##    
@@ -125,25 +125,24 @@ def setupStash(container, user):
 
     # TODO: Copy ssh keys 
 
-def sshSetup(container, keypath, user):
-    if OS == 'Windows':
-        keypath = f'/c/Users/{user}/.ssh/'
-    if OS == 'Darwin' or OS == 'Linux':
-        keypath = f'~/.ssh/'
-    cpTo(container, f"{keypath}id_rsa", f"/home/domino/.ssh/id_rsa_{user}")
-    cpTo(container, f"{keypath}id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
-    # append public key to authorized keys 
-    execute(container, f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
+# def sshSetup(container, keypath, user):
+
+#     cpTo(container, f"{keypath}id_rsa", f"/home/domino/.ssh/id_rsa_{user}")
+#     cpTo(container, f"{keypath}id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
+#     # append public key to authorized keys 
+#     execute(container, f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
 
 def usedPorts():
+    print(docker.containers.list())
     used = []
-    used += [c.ports[key] for c in docker.containers.list() for key in getPorts(c.id)]
+    used += [val for c in docker.containers.list() for val in getPorts(c.id).values()]
     print("USED: ")
     print(used)
     return used
     
 
 def getPorts(cid):
+    print(f"CID: {cid}")
     docker_port_cmd = f'docker port {cid}'
 
     ports = evalOrDie(docker_port_cmd, "There was an error getting the ports")[0]
@@ -153,21 +152,28 @@ def getPorts(cid):
     for line in port_lines:
         if line != '':
             port = line.split('->')
+            print(port)
             #print(port)
-            c_port = port[0]
+            c_port = port[0].rstrip()
             #print(c_port)
             l_port = port[1][9:]
             #print(l_port)
-            port_dict[c_port] = l_port
+            port_dict[c_port] = int(l_port)
 
+    print(port_dict)
     return port_dict
 
 def checkPorts(allocated, ports):
+    if allocated == []:
+        return ports
+    
     for key in ports.keys():
         if ports[key] in allocated:
             print(f"The port {color(ports[key], fg='red')} is already allocated")
             print(color("Changing the port randomly now...", fg='yellow'))
-            return changePortsRand(allocated, key, ports)
+            new_port = changePortsRand(allocated, key, ports)
+            ports[key] = new_port
+    return ports 
 
 def isImageRunning(image):
     for container in docker.containers.list():
@@ -180,10 +186,9 @@ def changePortsRand(used, port, dict):
     random_port = str(random.randint(3000, 9000))
 
     if random_port in used:
-        random_port = str(int(random_port) + 1)
+        random_port = int(random_port) + 1
     else:
         print(f"The new port for {port}/tcp is: {random_port}")  
-        dict[port] = random_port
-        return dict
+        return random_port
 
 
