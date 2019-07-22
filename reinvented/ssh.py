@@ -1,20 +1,14 @@
-import paramiko, os, cmd
+import paramiko, os, cmd, subprocess
 from utils import cpFrom, cpTo, execute
 
 def ssh(dport):
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-    print("connecting...")
-    client.connect(hostname='localhost', port=dport, username='domino', password='domino')
-    print("connected")
+    ssh_cmd = ['ssh', 'domino@localhost']
 
     try:
-        interpreter = SshCommand(client)
-        interpreter.cmdloop()
-    except KeyboardInterrupt as end:
-        exit(0)
-
+        subrpocess.call(ssh_cmd)
+    except:
+        print("There was an error during ssh")
+        exit(1)
 
 def copyKeys(container, location, user):
 
