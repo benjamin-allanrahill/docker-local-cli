@@ -121,16 +121,7 @@ def setupStash(container, user):
     
     cpTo(container, "./startup.py", "/tmp/")
     execute(container, 'chmod +x /tmp/startup.py')
-    execute(container,"python /tmp/startup.py")
-
-    # TODO: Copy ssh keys 
-
-# def sshSetup(container, keypath, user):
-
-#     cpTo(container, f"{keypath}id_rsa", f"/home/domino/.ssh/id_rsa_{user}")
-#     cpTo(container, f"{keypath}id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
-#     # append public key to authorized keys 
-#     execute(container, f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys")
+    execute(container,"sudo python /tmp/startup.py")
 
 def usedPorts():
     print(docker.containers.list())
