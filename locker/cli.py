@@ -11,6 +11,7 @@ from locker.stop import stop
 from locker.cleanup import cleanup
 from locker.dropin import dropIn, sshIn
 from locker.list import ps
+from locker.files import add, grab
 
 d = docker.from_env()
 
@@ -54,7 +55,14 @@ def main():
     add_parser.add_argument('source', help='The local file')
     add_parser.add_argument('dest', help='Where you want the file to end up')
 
+    grab_parser = subparsers.add_parser('grab ', help="Grab a file or dir from the container")
+    grab _parser.add_argument('--container', metavar="ID", help="The container to grab the files from")
+    grab _parser.add_argument('source', help='The path')
+    grab _parser.add_argument('dest', help='Where you want the file to end up')
+
     list_parser = subparsers.add_parser('list', help="list all the running containers or images")
+    list_parser.add_argument('-i', '--images', dest='images', action='store_true', help='[Optional] List the local images')
+    list_parser.add_argument('-r', '--registry', dest='registry', default='docker.rdcloud.bms.com:443' help='[Optional] List the images at a registry')
     list_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] List all the containers')
 
     args = parser.parse_args()
@@ -84,7 +92,9 @@ def main():
         elif cmd == 'ssh':
             sshIn(getContainers(args)[0], args.entrypoint, args.mode)            
         elif cmd == 'add':
-            add(args.source, args.dest, getContainers(args))
+            add(getContainers(args), args.source, args.dest)
+        elif cmd == 'grab':
+            grab(getContainers(args), args.source, args.dest)
         elif cmd == 'list':
             ps(args.all)
 
