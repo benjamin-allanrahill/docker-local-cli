@@ -5,7 +5,7 @@ setup(
     version='0.3.5',
     author='Benjamin Allan-Rahill, Intern',
     author_email='benjamin.allan-rahill@bms.com',
-    packages=['lockercli'],
+    packages=['locker'],
     entry_points = { 'console_scripts': [ 'locker=locker.cli:main', ], },
     description='A command line interface for running environments on your local machine',
     long_description=open('README.md').read(),
