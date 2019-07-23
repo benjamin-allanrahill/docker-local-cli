@@ -5,10 +5,10 @@
 
 import subprocess, os.path, sys, socket, docker, platform, random 
 from colors import color
-from locker.eval import evalOrDie, yes_or_no, callWithPipe
-from locker.utils import cpFrom, cpTo, execute
-from locker.ssh import copyKeys
-from locker.dropin import dropIn
+from eval import evalOrDie, yes_or_no, callWithPipe
+from utils import cpFrom, cpTo, execute
+from ssh import copyKeys
+from dropin import dropIn
 
 running_containers = []
 

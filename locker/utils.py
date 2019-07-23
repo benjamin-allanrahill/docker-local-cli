@@ -1,6 +1,6 @@
 import pexpect
 from pexpect.popen_spawn import PopenSpawn
-from locker.eval import evalOrDie
+from eval import evalOrDie
 def cpTo(container, file_path, dest):
     docker_cp_cmd = (
                     "docker cp "

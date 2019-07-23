@@ -1,5 +1,5 @@
 import paramiko, os, cmd, subprocess
-from locker.utils import cpFrom, cpTo, execute
+from utils import cpFrom, cpTo, execute
 from colors import color
 
 def ssh(dport):

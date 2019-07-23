@@ -5,12 +5,12 @@
 
 import argparse, re, docker, platform
 from colors import color
-from locker.run import createAndRun
-from locker.eval import callWithPipe, evalOrDie, yes_or_no
-from locker.stop import stop
-from locker.cleanup import cleanup
-from locker.dropin import dropIn
-from locker.list import ps
+from run import createAndRun
+from eval import callWithPipe, evalOrDie, yes_or_no
+from stop import stop
+from cleanup import cleanup
+from dropin import dropIn
+from list import ps
 
 d = docker.from_env()
 

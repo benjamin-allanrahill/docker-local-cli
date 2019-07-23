@@ -1,4 +1,4 @@
-from locker.eval import evalOrDie
+from eval import evalOrDie
 def ps(all):
     docker_ps_cmd = f"docker ps {' -a ' if all else ''}"
     
