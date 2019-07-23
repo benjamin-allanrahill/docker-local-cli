@@ -1,4 +1,4 @@
-from ssh import sshExec, ssh
+from locker.ssh import sshExec, ssh
 
 def dropIn(container, cmd, mode):
     ports = container.ports
@@ -10,4 +10,4 @@ def dropIn(container, cmd, mode):
     if mode == 'ti':
         ssh(ssh_port)
     else:
-        sshExec(cmd)
+        sshExec(cmd, ssh_port)

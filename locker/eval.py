@@ -4,7 +4,6 @@ from colors import color
 
 def evalOrDie(cmd, msg="ERROR:", ignore=False):
         cmd = shlex.split(cmd)
-        print(cmd)
         proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
         stdout, stderr = proc.communicate()
 

@@ -4,17 +4,17 @@
 # high level script for CLI
 
 import argparse, re, docker, platform
-from run import createAndRun
-from eval import callWithPipe, evalOrDie
-from stop import stop
-from cleanup import cleanup
-from dropin import dropIn
+from colors import color
+from locker.run import createAndRun
+from locker.eval import callWithPipe, evalOrDie, yes_or_no
+from locker.stop import stop
+from locker.cleanup import cleanup
+from locker.dropin import dropIn
+from locker.list import ps
 
 d = docker.from_env()
 
 def main():
-
-    
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -49,9 +49,10 @@ def main():
     add_parser.add_argument('source', help='The local file')
     add_parser.add_argument('dest', help='Where you want the file to end up')
 
-    args = parser.parse_args()
+    list_parser = subparsers.add_parser('list', help="list all the running containers or images")
+    list_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] List all the containers')
 
-    print(args)
+    args = parser.parse_args()
 
     if args.subcommand:
         cmd = args.subcommand.lower()
@@ -69,11 +70,17 @@ def main():
         elif cmd == 'stop':
             stop(getContainers(args), mode=args.halt)
         elif cmd == 'clean-up':
+            yn = yes_or_no(f"This will {color('remove', fg='red')} your containers. Do you want to continue?")
+            if not yn:
+                exit(0)
             cleanup(getContainers(args, plusStopped=True), args.quiet)
         elif cmd == 'drop-in':
             dropIn(getContainers(args)[0], args.entrypoint, args.mode)
         elif cmd == 'add':
             add(args.source, args.dest, getContainers(args))
+        elif cmd == 'list':
+            ps(args.all)
+
 
 
 def getContainers(args, plusStopped=False):

@@ -5,9 +5,10 @@
 
 import subprocess, os.path, sys, socket, docker, platform, random 
 from colors import color
-from eval import evalOrDie, yes_or_no, callWithPipe
-from utils import cpFrom, cpTo, execute
-from ssh import copyKeys
+from locker.eval import evalOrDie, yes_or_no, callWithPipe
+from locker.utils import cpFrom, cpTo, execute
+from locker.ssh import copyKeys
+from locker.dropin import dropIn
 
 running_containers = []
 
@@ -65,6 +66,10 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         #docker.images.pull(image)
         pullImage(image)
         createAndRun(image)
+    
+    if mode == 'ti':
+        dropIn(container, '', 'ti')
+
 
 def pullImage(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"):
     pull_cmd = f"docker pull {image}"

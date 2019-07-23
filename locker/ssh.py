@@ -1,11 +1,12 @@
 import paramiko, os, cmd, subprocess
-from utils import cpFrom, cpTo, execute
+from locker.utils import cpFrom, cpTo, execute
+from colors import color
 
 def ssh(dport):
-    ssh_cmd = ['ssh', 'domino@localhost']
-
+    ssh_cmd = ['echo', 'domino', '|', 'ssh', 'domino@localhost', '-p', f'{dport}']
+    subprocess.call(' '.join(ssh_cmd), shell=True)
     try:
-        subrpocess.call(ssh_cmd)
+        subprocess.call(' '.join(ssh_cmd), shell=True)
     except:
         print("There was an error during ssh")
         exit(1)
@@ -29,12 +30,13 @@ def sshExec(cmd, sport):
     
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-    print(f"connecting to {host}")
+    print(f"connecting...")
     client.connect(hostname='localhost', port=sport, username='domino', password='domino')
     print("connected")
 
-    print(f"Running {cmd}")
-    client.exec_command(cmd)
+    print(f"Running {color(cmd, fg='yellow')}")
+    stdin, stdout, stderr = client.exec_command(cmd)
+    print(stdout)
     print('Executed command')
 
 

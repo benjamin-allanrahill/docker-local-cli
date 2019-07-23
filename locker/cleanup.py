@@ -1,5 +1,4 @@
 # cleanup.py
-
 def cleanup(containers, quiet):
     if quiet:
         for c in containers:
