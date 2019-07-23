@@ -1,4 +1,4 @@
-asni-colors
+ansicolors
 docker
 pexpect
 paramiko
