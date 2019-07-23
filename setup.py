@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(
-    name='lockercli',
+    name='locker',
     version='0.3.5',
     author='Benjamin Allan-Rahill, Intern',
     author_email='benjamin.allan-rahill@bms.com',
