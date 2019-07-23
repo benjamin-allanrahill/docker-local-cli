@@ -9,7 +9,7 @@ from locker.run import createAndRun
 from locker.eval import callWithPipe, evalOrDie, yes_or_no
 from locker.stop import stop
 from locker.cleanup import cleanup
-from locker.dropin import dropIn
+from locker.dropin import dropIn, sshIn
 from locker.list import ps
 
 d = docker.from_env()
@@ -44,6 +44,11 @@ def main():
     dropin_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
     dropin_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
 
+    ssh_parser = subparsers.add_parser('ssh', help="Ssh into a running container")
+    ssh_parser.add_argument('--cmd', dest='entrypoint', default='/bin/bash', help='The command you would like to start in the container.')
+    ssh_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
+    ssh_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
+
     add_parser = subparsers.add_parser('add', help="Add a file or dir to the container")
     add_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
     add_parser.add_argument('source', help='The local file')
@@ -76,6 +81,8 @@ def main():
             cleanup(getContainers(args, plusStopped=True), args.quiet)
         elif cmd == 'drop-in':
             dropIn(getContainers(args)[0], args.entrypoint, args.mode)
+        elif cmd == 'ssh':
+            sshIn(getContainers(args)[0], args.entrypoint, args.mode)            
         elif cmd == 'add':
             add(args.source, args.dest, getContainers(args))
         elif cmd == 'list':
