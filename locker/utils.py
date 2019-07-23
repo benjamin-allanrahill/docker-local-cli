@@ -1,4 +1,5 @@
 import pexpect
+from subprocess import call
 from pexpect.popen_spawn import PopenSpawn
 from locker.eval import evalOrDie
 def cpTo(container, file_path, dest):
@@ -24,7 +25,7 @@ def execute(container, cmd, flags=''):
                         f"{container.id[:3]} "
                         f"{cmd}"
     )
-    child = PopenSpawn(docker_exec_cmd)
+    call(docker_exec_cmd)
     
 
 
