@@ -10,7 +10,7 @@ from locker.eval import callWithPipe, evalOrDie, yes_or_no
 from locker.stop import stop
 from locker.cleanup import cleanup
 from locker.dropin import dropIn, sshIn
-from locker.list import ps
+from locker.list import ps, listImages, listRegistry
 from locker.files import add, grab
 
 d = docker.from_env()
@@ -62,7 +62,7 @@ def main():
 
     list_parser = subparsers.add_parser('list', help="list all the running containers or images")
     list_parser.add_argument('-i', '--images', dest='images', action='store_true', help='[Optional] List the local images')
-    list_parser.add_argument('-r', '--registry', dest='registry', default='docker.rdcloud.bms.com:443' help='[Optional] List the images at a registry')
+    list_parser.add_argument('-r', '--registry', dest='registry', const='docker.rdcloud.bms.com:443' help='[Optional] List the images at a registry')
     list_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] List all the containers')
 
     args = parser.parse_args()
@@ -96,7 +96,12 @@ def main():
         elif cmd == 'grab':
             grab(getContainers(args), args.source, args.dest)
         elif cmd == 'list':
-            ps(args.all)
+            if args.images:
+                listImages()
+            elif args.registry is not None:
+                listRegistry(args.registry)
+            else:
+                ps(args.all)
 
 
 
