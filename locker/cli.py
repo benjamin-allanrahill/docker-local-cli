@@ -5,12 +5,12 @@
 
 import argparse, re, docker, platform
 from colors import color
-from run import createAndRun
-from eval import callWithPipe, evalOrDie, yes_or_no
-from stop import stop
-from cleanup import cleanup
-from dropin import dropIn
-from list import ps
+from locker.run import createAndRun
+from locker.eval import callWithPipe, evalOrDie, yes_or_no
+from locker.stop import stop
+from locker.cleanup import cleanup
+from locker.dropin import dropIn
+from locker.list import ps
 
 d = docker.from_env()
 
@@ -22,7 +22,7 @@ def main():
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
     run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22/tcp', 2222],['8787/tcp', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', 2222],['8787', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('-l','--label', dest='label', default='bms', help='[Optional] The metadata name to give the container')
@@ -100,8 +100,9 @@ def getContainers(args, plusStopped=False):
 def parsePorts(ports):
     # ports = ports.split(':')
     pdict = {}
+
     for pair in ports:
-        pdict[pair[0]] = pair[1]
+        pdict[f'{pair[0]}/tcp'] = int(pair[1])
     print(ports)
     print(pdict)
 

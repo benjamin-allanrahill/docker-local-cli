@@ -1,10 +1,10 @@
 import paramiko, os, cmd, subprocess
-from utils import cpFrom, cpTo, execute
+from locker.utils import cpFrom, cpTo, execute
 from colors import color
 
 def ssh(dport):
-    ssh_cmd = ['echo', 'domino', '|', 'ssh', 'domino@localhost', '-p', f'{dport}']
-    subprocess.call(' '.join(ssh_cmd), shell=True)
+    ssh_cmd = [ 'ssh', 'domino@localhost', '-p', f'{dport}']
+    # subprocess.call(' '.join(ssh_cmd), shell=True)
     try:
         subprocess.call(' '.join(ssh_cmd), shell=True)
     except:

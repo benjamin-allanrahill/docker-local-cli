@@ -5,17 +5,17 @@
 
 import subprocess, os.path, sys, socket, docker, platform, random 
 from colors import color
-from eval import evalOrDie, yes_or_no, callWithPipe
-from utils import cpFrom, cpTo, execute
-from ssh import copyKeys
-from dropin import dropIn
+from locker.eval import evalOrDie, yes_or_no, callWithPipe
+from locker.utils import cpFrom, cpTo, execute
+from locker.ssh import copyKeys
+from locker.dropin import dropIn
 
 running_containers = []
 
 docker = docker.from_env()
 
 def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22/tcp': 2222, '8787/tcp': 8787}, mode='d', keypath="/.ssh/", label={"name": "bms"}):
-    
+    container = None
     # check to see if the image is local
     if testImagePresence(image):
         print("You have this image on your machine")
@@ -173,7 +173,8 @@ def checkPorts(allocated, ports):
 
 def isImageRunning(image):
     for container in docker.containers.list():
-        if container.image == image:
+        print(container.image)
+        if container.attrs['Config']['Image'] == image:
             return True
     return False
 

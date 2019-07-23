@@ -1,6 +1,6 @@
 # files.py
 
-from ssh import sshExec
+from locker.ssh import sshExec
 
 def add(source, dest, container):
     print(f"Copying file {source} to {dest} in the container {container.id}")

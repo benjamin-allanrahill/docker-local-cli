@@ -1,7 +1,9 @@
-from ssh import sshExec, ssh
+from locker.ssh import sshExec, ssh
 
 def dropIn(container, cmd, mode):
     ports = container.ports
+
+    print(ports)
     
     ssh_port = ports['22/tcp'][0]['HostPort']
 
