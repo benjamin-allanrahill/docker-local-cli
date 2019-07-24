@@ -14,6 +14,10 @@ def ssh(dport):
 def copyKeys(container, location, user):
 
     wkdir = os.getcwd()
+
+    # test to see if location exists
+    if not os.path.exists(location):
+        location = input(f"I was looking for your ssh keys at {color(location, fg='red')}. Where should I look?")
     #change wkdir do that keys can be copied
     os.chdir(location)
 
