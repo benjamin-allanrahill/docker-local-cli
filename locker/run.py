@@ -14,7 +14,7 @@ running_containers = []
 
 docker = docker.from_env()
 
-def createAndRun(user, image, ports, mode, keypath, label):
+def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
     container = None
     # check to see if the image is local
     if testImagePresence(image):
@@ -38,8 +38,8 @@ def createAndRun(user, image, ports, mode, keypath, label):
         ## START CONTAINER ##
         container = docker.containers.run(  image=image,
                                             ports=ports_new,
-                                            cap_add=["SYS_ADMIN", "DAC_READ_SEARCH"],
-                                            devices=["/dev/fuse"],
+                                            cap_add=cap_add,
+                                            devices=devices,
                                             labels=label,
                                             detach=True)
         print(f"Your container is now running with ID: {container.id}")
