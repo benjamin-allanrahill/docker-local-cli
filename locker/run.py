@@ -34,6 +34,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 
         else:
             print("No running containers of this image found. \nStarting new container")
+            exposedPortsHelp(image)
 
 
         ## START CONTAINER ##
@@ -45,15 +46,21 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
                                             detach=True)
         print(f"Your container is now running with ID: {container.id}")
         
-        ## COPY KEYS TO CONTAINER ##
-        copyKeys(container, keypath, user)
 
-        ## EXECUTE SETUP
-        print("Trying to set up stash")
-        setupStash(container, user)
+        if label['registry'] == 'docker.rdcloud.bms.com:443':
 
-        print(f"Access {color('Rstudio', fg='blue')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
-        print(f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
+            ## RUN BMS SPECIFIC ##
+
+            ## COPY KEYS TO CONTAINER ##
+            copyKeys(container, keypath, user)
+
+
+            ## EXECUTE SETUP
+            print("Trying to set up stash")
+            setupStash(container, user)
+
+            print(f"Access {color('Rstudio', fg='blue')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
+            print(f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
 
 
     ## PULL ##    
@@ -61,6 +68,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
         pullImage(image)
         createAndRun(image)
     
+    ## EXEC IN ##
     if mode == 'ti':
         dropIn(container, '', 'ti')
 
@@ -84,13 +92,13 @@ def testImagePresence(image_name):
      
 def findSimilarImages(image, registry):
 
-
-    vals = image.split(':')
-    registry = vals[0]
-    port = vals[1].split('/')[0]
-    repo = vals[1].split('/')[1]
-    tag = vals[2]
-    image = f"{registry}:{port}/{repo}"
+    # if registry == 'bms':
+    #     vals = image.split(':')
+    #     registry = vals[0]
+    #     port = vals[1].split('/')[0]
+    #     repo = vals[1].split('/')[1]
+    #     tag = vals[2]
+    #     image = f"{registry}:{port}/{repo}"
 
     grep_cmd = f"docker images | grep {image} | awk '{{print $1; print $2; print $3}}'"
 
@@ -105,7 +113,7 @@ def findSimilarImages(image, registry):
         if answ:
             chooseImage()
     else:
-        print("There were no similar images found")
+        print("There were no similar images were found locally")
 
 def setupStash(container, user):
     pwd = os.getcwd()
@@ -194,3 +202,7 @@ def changePortsManual(used, inside, port):
     else:
         print(f"The new port for {inside} is: {new_port}")  
         return new_port
+
+def exposedPortsHelp(image):
+    print("EXPOSED PORTS")
+    print(docker.images.get(image).attrs['ExposedPorts'])
