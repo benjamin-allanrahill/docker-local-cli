@@ -77,7 +77,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 def pullImage(image):
     pull_cmd = f"docker pull {image}"
     print(f"Attempting to pull  image [{image}] from the registry")
-    evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
+    evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n Make sure that you have your HTTP_PROXY set if you are pulling from DockerHub. \n")
         
 def testImagePresence(image_name):
     if len(docker.images.list()) == 0:
