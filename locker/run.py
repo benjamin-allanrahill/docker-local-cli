@@ -19,25 +19,26 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
     # check to see if the image is local
     if testImagePresence(image):
         print("You have this image on your machine")
-        print("PORTS: ")
-        print(ports)
-
-        ## CHECK & CHANGE PORTS ##
-        ports_new = checkPorts(usedPorts(), ports)
 
         # test to see if they already have one running
         if isImageRunning(image):
-            print(f"You already have a container running with the image [{color(image, fg='blue')}]")
+            print(f"You already have a container running with the image [{color(image, fg='cyan')}]")
             y = yes_or_no("Do you want to create another container with the same image?")
             if not y:
                 return
+            
+            ## CHECK & CHANGE PORTS ##
+            print("You will might need to change the ports ...")
+            ports_new = checkPorts(usedPorts(), ports)
+            ports = ports_new
+
         else:
             print("No running containers of this image found. \nStarting new container")
 
 
         ## START CONTAINER ##
         container = docker.containers.run(  image=image,
-                                            ports=ports_new,
+                                            ports=ports,
                                             cap_add=cap_add,
                                             devices=devices,
                                             labels=label,
@@ -63,24 +64,27 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
     if mode == 'ti':
         dropIn(container, '', 'ti')
 
-
 def pullImage(image):
     pull_cmd = f"docker pull {image}"
     print(f"Attempting to pull  image [{image}] from the registry")
     evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
         
 def testImagePresence(image_name):
-    image = docker.images.list()
-    print(image)
-    if len(image) == 0:
+    if len(docker.images.list()) == 0:
         return False
     else:
-        return True
-        # TODO: Add check for other images 
-        # search for repo images
-        # grep_cmd = 
+        for image in docker.images.list():
+            name = image.attrs['RepoTags'][0]
+            if name == image_name:
+                return True
+            else:
+                continue
+        print("You do not have this image on your machine. I will now look for similar images...")
+        return False
      
-def findSimilarImages(image):
+def findSimilarImages(image, registry):
+
+
     vals = image.split(':')
     registry = vals[0]
     port = vals[1].split('/')[0]
@@ -183,7 +187,7 @@ def changePortsRand(used, port, dict):
 def changePortsManual(used, inside, port):
     
     # TODO: test input to make sure 
-    new_port = int(input("What would you like to set {inside} (in the container) to (on your machine)? [int > 1023]"))
+    new_port = int(input(f"What would you like to set {inside} (in the container) to (on your machine)? [int > 1023]"))
     if new_port in used:
         print("That port is already allocated. Incrementing by one ...")
         new_port = int(new_port) + 1
