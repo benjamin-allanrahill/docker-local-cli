@@ -22,19 +22,19 @@ def main():
     subparsers = parser.add_subparsers(dest='subcommand', title='subcommands', help='Available sub-commands')
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
-    run_parser.add_argument('--cap-add', dest=cap_add, nargs=1, action='append', default=["SYS_ADMIN", "DAC_READ_SEARCH"], help='Add linux capabilities')
+    run_parser.add_argument('--cap-add', dest='cap_add', nargs=1, action='append', default=["SYS_ADMIN", "DAC_READ_SEARCH"], help='Add linux capabilities')
     run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
-    run_parser.add_argument('--device', dest=device, nargs=1, default=["/dev/fuse"], help='Add device to the container')
+    run_parser.add_argument('--device', dest='device', nargs=1, default=["/dev/fuse"], help='Add device to the container')
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', help='[Optional] The location in which your SSH keys are stored.')
-    run_parser.add_argument('--label', dest='labels', nargs=2, metvar=('key', 'val'), action='append', help='[Optional] A label to append to your container < key, val >')
+    run_parser.add_argument('--label', dest='labels', nargs=2, metavar=('key', 'val'), action='append', help='[Optional] A label to append to your container < key, val >')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
     run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', 2222],['8787', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
     run_parser.add_argument('user', help='Your BMS username')
 
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
-    stop_parser.add_argument('--filter', dest='label', help="The meta data name that you would like to filter on EG: bms")
+    stop_parser.add_argument('-r', '--registry', dest='registry', default='bms', help='[Optional] Stop the images labeled with a particular registry')
     stop_parser.add_argument('--halt', '--slam', dest='halt', default=False, action='store_true', help='[Optional] Force the stop of a running container (uses SIGKILL)')
 
     cleanup_parser = subparsers.add_parser('clean-up', help="Clean up running containers")
@@ -111,7 +111,7 @@ def getContainers(args, plusStopped=False):
     elif hasattr(args, 'label') and args.label != None:
         print(args.label)
         print("Filtering containers")
-        return d.containers.list(filters={'name': args.label}, all=plusStopped)
+        return d.containers.list(filters={'registry': args.registry}, all=plusStopped)
     elif hasattr(args, 'all') and args.all:
         print("ALL containers were specified")
         return d.containers.list(all=plusStopped)
@@ -140,8 +140,8 @@ def defaultKeyPath(user):
     return keypath
 
 def parseLabels(labels, image):
-    if args.labels == None:
-        return parseRegistry(image, labels)
+    if labels == None:
+        return parseRegistry(image, {})
     labels = {}
     for key, val in ports:
         labels[key] = val
