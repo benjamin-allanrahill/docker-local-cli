@@ -10,8 +10,8 @@ def evalOrDie(cmd, msg="ERROR:", ignore=False):
         if proc.returncode != 0 and not ignore:
             print(color(msg, fg="yellow"))
             err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(cmd, proc.returncode, stdout, stderr)
-            raise Exception(err_str)
-            # sys.exit()
+            #raise Exception(err_str)
+            sys.exit()
 
         return stdout.decode('utf-8'), proc.returncode
 
