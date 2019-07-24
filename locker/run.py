@@ -14,7 +14,7 @@ running_containers = []
 
 docker = docker.from_env()
 
-def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all", ports={'22/tcp': 2222, '8787/tcp': 8787}, mode='d', keypath="/.ssh/", label={"name": "bms"}):
+def createAndRun(user, image, ports, mode, keypath, label):
     container = None
     # check to see if the image is local
     if testImagePresence(image):
@@ -51,8 +51,8 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         print("Trying to set up stash")
         setupStash(container, user)
 
-        print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
-        print(f"Access {color('ssh', fg='yellow')} at {socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
+        print(f"Access {color('Rstudio', fg='blue')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
+        print(f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
 
 
     ## PULL ##    
@@ -64,13 +64,12 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
         dropIn(container, '', 'ti')
 
 
-def pullImage(image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"):
+def pullImage(image):
     pull_cmd = f"docker pull {image}"
     print(f"Attempting to pull  image [{image}] from the registry")
     evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n")
         
 def testImagePresence(image_name):
-
     image = docker.images.list()
     print(image)
     if len(image) == 0:
@@ -104,17 +103,6 @@ def findSimilarImages(image):
     else:
         print("There were no similar images found")
 
-def chooseImage(images):
-    questions = [
-        {
-            'type': 'list',
-            'name': 'image',
-            'message': 'Which image do you want to run?',
-            'choices': [images[i] for i in range(len(images))]
-        }
-    ]
-    answers = prompt(questions)
-
 def setupStash(container, user):
     
     cpTo(container, "./startup.py", "/tmp/")
@@ -127,8 +115,7 @@ def usedPorts():
     used += [val for c in docker.containers.list() for val in getPorts(c.id).values()]
     print("USED: ")
     print(used)
-    return used
-    
+    return used  
 
 def getPorts(cid):
     print(f"CID: {cid}")
