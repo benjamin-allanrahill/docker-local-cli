@@ -159,8 +159,12 @@ def checkPorts(allocated, ports):
     for key in ports.keys():
         if ports[key] in allocated:
             print(f"The port {color(ports[key], fg='red')} is already allocated")
-            print(color("Changing the port randomly now...", fg='yellow'))
-            new_port = changePortsRand(allocated, key, ports)
+            yn = yes_or_no("Would you like to change the ports manually?")
+            if y:
+                new_port = changePortsManual(allocated, key, ports[key])
+            else:
+                print(color("Changing the port randomly now...", fg='yellow'))
+                new_port = changePortsRand(allocated, key, ports)
             ports[key] = new_port
     return ports 
 
@@ -181,4 +185,13 @@ def changePortsRand(used, port, dict):
         print(f"The new port for {port}/tcp is: {random_port}")  
         return random_port
 
-
+def changePortsManual(used, inside, port):
+    
+    # TODO: test input to make sure 
+    new_port = int(input("What would you like to set {inside} (in the container) to (on your machine)? [int > 1023]"))
+    if new_port in used:
+        print("That port is already allocated. Incrementing by one ...")
+        new_port = int(new_port) + 1
+    else:
+        print(f"The new port for {inside} is: {new_port}")  
+        return new_port
