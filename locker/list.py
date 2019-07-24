@@ -1,3 +1,4 @@
+import json
 from locker.eval import evalOrDie
 def ps(all):
     docker_ps_cmd = f"docker ps {' -a ' if all else ''}"
@@ -7,16 +8,16 @@ def ps(all):
 def listRegistry(registry):
     curl_cmd = f'curl -s -X GET https://{registry}/v2/_catalog'
 
-    data = evalOrDie(curl_cmd, "There was an error getting the images")
-    print(data)
+    data = json.loads(evalOrDie(curl_cmd, "There was an error getting the images")[0])
+    #print(data)
+    #print(type(data))
 
-    for repo in data["repositories"]:
-        tag_cmd = f'curl  -s -X GET https://myregistry:5000/v2/{repo}/tags/list'
-        res = evalOrDie(tag_cmd, "There was en error getting the tags")
-        tags = [str(tag) for tag in res["tags"]]
-        print(repo)
-        print(tags)
-
+    print("REPOSITORY \t\t\t\t\t TAGS")
+    for repo in data['repositories']:
+        tag_cmd = f'curl  -s -X GET https://{registry}/v2/{repo}/tags/list'
+        res = json.loads(evalOrDie(tag_cmd, "There was en error getting the tags")[0])
+        tags = [str(tag) for tag in res['tags']]
+        print(f"{repo} \t\t\t\t\t {tags}")
 
 def listImages():
     image_cmd = 'docker images'
