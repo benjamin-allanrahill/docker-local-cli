@@ -148,7 +148,7 @@ def parseLabels(labels, image):
     return labels
 
 def parseRegistry(image, labels):
-
+    
     result = re.match('^docker.rdcloud.bms.com:443', image)
 
     if result != None:
