@@ -24,11 +24,6 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
 
         ## CHECK & CHANGE PORTS ##
         ports_new = checkPorts(usedPorts(), ports)
-        print("PORTS: ")
-        print(ports_new)
-
-        print("LABEL:")
-        print(label)
 
         # test to see if they already have one running
         if isImageRunning(image):
@@ -49,21 +44,19 @@ def createAndRun(user, image="docker.rdcloud.bms.com:443/rr:Genomics2019-03_all"
                                             detach=True)
         print(f"Your container is now running with ID: {container.id}")
         
-        # test execute cmd
-        #execute(container, "/bin/bash")
-
+        ## COPY KEYS TO CONTAINER ##
         copyKeys(container, keypath, user)
-        #set up ssh
-        #sshSetup(container, keypath, user)
-        #set up stash
+
+        ## EXECUTE SETUP
         print("Trying to set up stash")
         setupStash(container, user)
+
         print(f"Access {color('Rstudio', fg='blue')} at {socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
+        print(f"Access {color('ssh', fg='yellow')} at {socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
+
 
     ## PULL ##    
     else:
-        #print(f"Attempting to pull  image [{image}] from the registry")
-        #docker.images.pull(image)
         pullImage(image)
         createAndRun(image)
     
