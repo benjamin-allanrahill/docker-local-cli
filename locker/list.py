@@ -10,6 +10,14 @@ def listRegistry(registry):
     data = evalOrDie(curl_cmd, "There was an error getting the images")
     print(data)
 
+    for repo in data["repositories"]:
+        tag_cmd = f'curl  -s -X GET https://myregistry:5000/v2/{repo}/tags/list'
+        res = evalOrDie(tag_cmd, "There was en error getting the tags")
+        tags = [str(tag) for tag in res["tags"]]
+        print(repo)
+        print(tags)
+
+
 def listImages():
     image_cmd = 'docker images'
     
