@@ -34,7 +34,9 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 
         else:
             print("No running containers of this image found. \nStarting new container")
-            exposedPortsHelp(image)
+
+            # make sure the images exposed ports are allocated 
+            ports = exposedPortsHelp(image)
 
 
         ## START CONTAINER ##
@@ -44,7 +46,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
                                             devices=devices,
                                             labels=label,
                                             detach=True)
-        print(f"Your container is now running with ID: {container.id}")
+        print(f"Your container is now running with ID: {container.id:.3f}")
         
 
         if label['registry'] == 'docker.rdcloud.bms.com:443':
@@ -168,7 +170,7 @@ def checkPorts(allocated, ports):
             print(f"The port {color(ports[key], fg='red')} is already allocated")
             yn = yes_or_no("Would you like to change the ports manually?")
             if yn:
-                new_port = changePortsManual(allocated, key, ports[key])
+                new_port = changePortsManual(allocated, key)
             else:
                 print(color("Changing the port randomly now...", fg='yellow'))
                 new_port = changePortsRand(allocated, key, ports)
@@ -192,7 +194,7 @@ def changePortsRand(used, port, dict):
         print(f"The new port for {port}/tcp is: {random_port}")  
         return random_port
 
-def changePortsManual(used, inside, port):
+def changePortsManual(used, inside):
     
     # TODO: test input to make sure 
     new_port = int(input(f"What would you like to set {inside} (in the container) to (on your machine)? [int > 1023]"))
@@ -205,4 +207,15 @@ def changePortsManual(used, inside, port):
 
 def exposedPortsHelp(image):
     print("EXPOSED PORTS")
-    print(docker.images.get(image).attrs['ExposedPorts'])
+    exp = docker.images.get(image).attrs['Config']['ExposedPorts']
+
+    ports = {}
+    for port in exp.keys():
+        if exp[port] == {}:
+            print("\nThis container has exposed ports that you have not allocated!")
+            ports[port] = changePortsManual(usedPorts(), port)
+        else:
+            ports[port] = exp[port]
+    
+    return ports 
+
