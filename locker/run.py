@@ -132,9 +132,9 @@ def setupStash(container, user):
     os.chdir(pwd)
 
 def usedPorts():
-    print(docker.containers.list())
+    contianers = docker.containers.list()
     used = []
-    used += [val for c in docker.containers.list() for val in getPorts(c.id).values()]
+    used += [val for c in containers for val in getPorts(c.id).values() if len(containers) >= 1]
     print("USED: ")
     print(used)
     return used  
@@ -208,14 +208,16 @@ def changePortsManual(used, inside):
 def exposedPortsHelp(image, ports):
     print("EXPOSED PORTS")
     exp = docker.images.get(image).attrs['Config']['ExposedPorts']
-
-    ports = {}
-    for port in exp.keys():
-        if port not in ports.keys():
-            print("\nThis container has exposed ports that you have not allocated!")
-            ports[port] = changePortsManual(usedPorts(), port)
-        else:
-            ports[port] = exp[port]
     
+    for port in exp.keys():
+        print(port)
+        if port not in ports.keys():
+            print(ports.keys())
+            print("\nThis container has exposed ports that you have not allocated!")
+            if yes_or_no(f"Do you want to change port {port}?"):
+                ports[port] = changePortsManual(usedPorts(), port)
+            else:
+                ports.pop(port, None)
+    print(ports)
     return ports 
 

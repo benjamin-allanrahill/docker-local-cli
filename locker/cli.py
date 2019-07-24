@@ -13,6 +13,8 @@ from locker.dropin import dropIn, sshIn
 from locker.list import ps, listImages, listRegistry
 from locker.files import add, grab
 
+ROOT = defaultRootPath()
+
 d = docker.from_env()
 
 def main():
@@ -55,7 +57,7 @@ def main():
     add_parser = subparsers.add_parser('add', help="Add a file or dir to the container")
     add_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
     add_parser.add_argument('source', help='The local file')
-    add_parser.add_argument('dest', help='Where you want the file to end up')
+    add_parser.add_argument('dest', type=str, help='Where you want the file to end up')
 
     grab_parser = subparsers.add_parser('grab', help="Grab a file or dir from the container")
     grab_parser.add_argument('--container', metavar="ID", help="The container to grab the files from")
@@ -79,7 +81,7 @@ def main():
                 keydir = args.keypath
             else:
                 print("CHANGING TO DEFAULT PATH")
-                keydir = defaultKeyPath(args.user)
+                keydir = defaultRootPath(args.user) + ".ssh/"
             ports = parsePorts(args.ports)
             createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=args.user, label=parseLabels(args.labels, args.image), cap_add=args.cap_add, devices=args.device)
         elif cmd == 'stop':
@@ -94,9 +96,10 @@ def main():
         elif cmd == 'ssh':
             sshIn(getContainers(args)[0], args.entrypoint, args.mode)            
         elif cmd == 'add':
-            add(getContainers(args), args.source, args.dest)
+            print(args.dest)
+            add(getContainers(args)[0], ROOT + args.source, args.dest)
         elif cmd == 'grab':
-            grab(getContainers(args), args.source, args.dest)
+            grab(getContainers(args)[0], args.source, ROOT+ args.dest)
         elif cmd == 'list':
             if args.images:
                 listImages()
@@ -130,10 +133,10 @@ def parsePorts(ports):
 
     return pdict
 
-def defaultKeyPath(user):
+def defaultRootPath(user):
     OS = platform.system()
     if OS == 'Windows':
-        keypath = f'C:/Users/{user}/.ssh/'
+        keypath = f'C:/Users/{user}/'
     if OS == 'Darwin' or OS == 'Linux':
         keypath = f'~/.ssh/'
     print(f"the ssh path was changed to the deafult {OS} key path")
