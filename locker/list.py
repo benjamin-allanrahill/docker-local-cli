@@ -5,7 +5,7 @@ def ps(all):
     print(evalOrDie(docker_ps_cmd, "There was an error getting the containers")[0])
 
 def listRegistry(registry):
-    curl_cmd = f'curl -X GET https://{registry}/v2/_catalog'
+    curl_cmd = f'curl -s -X GET https://{registry}/v2/_catalog'
 
     data = evalOrDie(curl_cmd, "There was an error getting the images")
     print(data)
