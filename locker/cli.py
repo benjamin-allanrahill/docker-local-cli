@@ -55,14 +55,14 @@ def main():
     add_parser.add_argument('source', help='The local file')
     add_parser.add_argument('dest', help='Where you want the file to end up')
 
-    grab_parser = subparsers.add_parser('grab ', help="Grab a file or dir from the container")
-    grab _parser.add_argument('--container', metavar="ID", help="The container to grab the files from")
-    grab _parser.add_argument('source', help='The path')
-    grab _parser.add_argument('dest', help='Where you want the file to end up')
+    grab_parser = subparsers.add_parser('grab', help="Grab a file or dir from the container")
+    grab_parser.add_argument('--container', metavar="ID", help="The container to grab the files from")
+    grab_parser.add_argument('source', help='The path')
+    grab_parser.add_argument('dest', help='Where you want the file to end up')
 
     list_parser = subparsers.add_parser('list', help="list all the running containers or images")
     list_parser.add_argument('-i', '--images', dest='images', action='store_true', help='[Optional] List the local images')
-    list_parser.add_argument('-r', '--registry', dest='registry', const='docker.rdcloud.bms.com:443' help='[Optional] List the images at a registry')
+    list_parser.add_argument('-r', '--registry', dest='registry', nargs='?', const='docker.rdcloud.bms.com:443', help='[Optional] List the images at a registry')
     list_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] List all the containers')
 
     args = parser.parse_args()
