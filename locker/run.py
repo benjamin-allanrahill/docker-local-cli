@@ -3,7 +3,7 @@
 # Low level module to run configurations in docker container 
 # Benjamin Allan-Rahill
 
-import subprocess, os.path, sys, socket, docker, platform, random 
+import subprocess, os, sys, socket, docker, platform, random 
 from colors import color
 from locker.eval import evalOrDie, yes_or_no, callWithPipe
 from locker.utils import cpFrom, cpTo, execute
@@ -104,10 +104,18 @@ def findSimilarImages(image):
         print("There were no similar images found")
 
 def setupStash(container, user):
-    
-    cpTo(container, "./startup.py", "/tmp/")
+    pwd = os.getcwd()
+
+    # change directory to copy startup script
+    swd = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(swd)
+
+    cpTo(container, f"./startup.py", "/tmp/")
     execute(container, 'chmod +x /tmp/startup.py')
-    execute(container,"sudo python /tmp/startup.py")
+    execute(container, "sudo python /tmp/startup.py")
+    
+    #change back
+    os.chdir(pwd)
 
 def usedPorts():
     print(docker.containers.list())
@@ -147,7 +155,7 @@ def checkPorts(allocated, ports):
         if ports[key] in allocated:
             print(f"The port {color(ports[key], fg='red')} is already allocated")
             yn = yes_or_no("Would you like to change the ports manually?")
-            if y:
+            if yn:
                 new_port = changePortsManual(allocated, key, ports[key])
             else:
                 print(color("Changing the port randomly now...", fg='yellow'))
