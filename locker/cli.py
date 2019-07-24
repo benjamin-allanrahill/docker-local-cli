@@ -22,17 +22,19 @@ def main():
     subparsers = parser.add_subparsers(dest='subcommand', title='subcommands', help='Available sub-commands')
     
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
-    run_parser.add_argument('user', help='Your BMS username')
-    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', 2222],['8787', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('--cap-add', dest=cap_add, nargs=1, action='append', default=["SYS_ADMIN", "DAC_READ_SEARCH"], help='Add linux capabilities')
+    run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
+    run_parser.add_argument('--device', dest=device, nargs=1, default=["/dev/fuse"], help='Add device to the container')
     run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', help='[Optional] The location in which your SSH keys are stored.')
-    run_parser.add_argument('-l','--label', dest='label', default='bms', help='[Optional] The metadata name to give the container')
+    run_parser.add_argument('--label', dest='labels', nargs=2, metvar=('key', 'val'), action='append', help='[Optional] A label to append to your container < key, val >')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
-    run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
+    run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', 2222],['8787', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('user', help='Your BMS username')
 
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
-    stop_parser.add_argument('--filter', dest='label', help="The meta data name that you would like to filter on EG: bms")
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
+    stop_parser.add_argument('--filter', dest='label', help="The meta data name that you would like to filter on EG: bms")
     stop_parser.add_argument('--halt', '--slam', dest='halt', default=False, action='store_true', help='[Optional] Force the stop of a running container (uses SIGKILL)')
 
     cleanup_parser = subparsers.add_parser('clean-up', help="Clean up running containers")
@@ -61,9 +63,9 @@ def main():
     grab_parser.add_argument('dest', help='Where you want the file to end up')
 
     list_parser = subparsers.add_parser('list', help="list all the running containers or images")
+    list_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] List all the containers')
     list_parser.add_argument('-i', '--images', dest='images', action='store_true', help='[Optional] List the local images')
     list_parser.add_argument('-r', '--registry', dest='registry', nargs='?', const='docker.rdcloud.bms.com:443', help='[Optional] List the images at a registry')
-    list_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] List all the containers')
 
     args = parser.parse_args()
 
@@ -79,7 +81,7 @@ def main():
                 print("CHANGING TO DEFAULT PATH")
                 keydir = defaultKeyPath(args.user)
             ports = parsePorts(args.ports)
-            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=args.user, label={"name": args.label})
+            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=args.user, label=parseLabels(args.labels, args.image), cap_add=args.cap_add, devices=args.device)
         elif cmd == 'stop':
             stop(getContainers(args), mode=args.halt)
         elif cmd == 'clean-up':
@@ -102,8 +104,6 @@ def main():
                 listRegistry(args.registry)
             else:
                 ps(args.all)
-
-
 
 def getContainers(args, plusStopped=False):
     if hasattr(args, 'container') and args.container != None:
@@ -138,6 +138,25 @@ def defaultKeyPath(user):
         keypath = f'~/.ssh/'
     print(f"the ssh path was changed to the deafult {OS} key path")
     return keypath
+
+def parseLabels(labels, image):
+    if args.labels == None:
+        return parseRegistry(image, labels)
+    labels = {}
+    for key, val in ports:
+        labels[key] = val
+    return labels
+
+def parseRegistry(image, labels):
+    result = re.match('^docker.rdcloud.bms.com', image)
+
+    if result != None:
+        labels['registry'] = 'bms'
+    else:
+        labels['registry'] = 'docker'
+
+    return labels
+
             
 if __name__ == "__main__":
     main()
