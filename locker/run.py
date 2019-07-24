@@ -36,7 +36,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             print("No running containers of this image found. \nStarting new container")
 
             # make sure the images exposed ports are allocated 
-            ports = exposedPortsHelp(image)
+            ports = exposedPortsHelp(image, ports)
 
 
         ## START CONTAINER ##
@@ -46,7 +46,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
                                             devices=devices,
                                             labels=label,
                                             detach=True)
-        print(f"Your container is now running with ID: {container.id:.3f}")
+        print(f"Your container is now running with ID: {container.id}")
         
 
         if label['registry'] == 'docker.rdcloud.bms.com:443':
@@ -77,7 +77,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 def pullImage(image):
     pull_cmd = f"docker pull {image}"
     print(f"Attempting to pull  image [{image}] from the registry")
-    evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \n Make sure that you have your HTTP_PROXY set if you are pulling from DockerHub. \n")
+    evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \nMake sure that you have your HTTP_PROXY set if you are pulling from DockerHub. \n")
         
 def testImagePresence(image_name):
     if len(docker.images.list()) == 0:
@@ -205,13 +205,13 @@ def changePortsManual(used, inside):
         print(f"The new port for {inside} is: {new_port}")  
         return new_port
 
-def exposedPortsHelp(image):
+def exposedPortsHelp(image, ports):
     print("EXPOSED PORTS")
     exp = docker.images.get(image).attrs['Config']['ExposedPorts']
 
     ports = {}
     for port in exp.keys():
-        if exp[port] == {}:
+        if port not in ports.keys():
             print("\nThis container has exposed ports that you have not allocated!")
             ports[port] = changePortsManual(usedPorts(), port)
         else:
