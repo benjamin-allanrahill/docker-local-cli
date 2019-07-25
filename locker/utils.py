@@ -1,6 +1,11 @@
-import pexpect
+#!/usr/bin/env python3.6
+"""
+utils.py
+@description: Container functions for Locker commands 
+@author: Benjamin Allan-Rahill
+
+"""
 from subprocess import call
-from pexpect.popen_spawn import PopenSpawn
 from locker.eval import evalOrDie
 
 
@@ -15,7 +20,7 @@ def cpFrom(container, file_path, dest):
 
 
 def execute(container, cmd, flags=''):
-    print(f"EXECUTING: {cmd}")
+    # print(f"EXECUTING: {cmd}")
     docker_exec_cmd = ("docker exec "
                        f"-{flags} "
                        f"{container.id[:3]} "
