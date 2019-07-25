@@ -1,5 +1,5 @@
 # eval.py
-import subprocess, shlex
+import subprocess, shlex, sys
 from colors import color
 
 def evalOrDie(cmd, msg="ERROR:", ignore=False):
