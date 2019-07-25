@@ -1,9 +1,11 @@
-#!/usr/bin/env python3\
+#!/usr/bin/env python3.6
+"""
+run.py
+@description: Low level module to run configurations in docker container for the Locker sub command
+@author: Benjamin Allan-Rahill
 
-# Low level module to run configurations in docker container 
-# Benjamin Allan-Rahill
-
-import subprocess, os, sys, socket, docker, platform, random 
+"""
+import subprocess, os, sys, socket, docker, platform, random
 from colors import color
 from locker.eval import evalOrDie, yes_or_no, callWithPipe
 from locker.utils import cpFrom, cpTo, execute
@@ -14,73 +16,145 @@ running_containers = []
 
 docker = docker.from_env()
 
+
 def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
-    container = None
+    '''
+        createAndRun(user, image, ports, mode, keypath, label, cap_add, devices)
+
+        Create and run a docker container with specified parameters   
+            
+        Parameters
+        ----------
+        user: str
+            user running container
+        image: str
+            name of docker image to run 
+        ports: dict 
+            port mappings 
+        mode: str
+            run interactive or detached 
+        keypath: str 
+            path to .ssh/ 
+        label: dict
+            labels to be added to the container
+        cap_add: list
+            linux capabilities for the container
+        devices: list
+            devices to add to the container
+
+    '''
+    container = None  # global container obj
+
     # check to see if the image is local
     if testImagePresence(image):
+
         print("You have this image on your machine")
 
-        # test to see if they already have one running
+        # test to see if they already have a container running
         if isImageRunning(image):
-            print(f"You already have a container running with the image [{color(image, fg='cyan')}]")
-            y = yes_or_no("Do you want to create another container with the same image?")
-            if not y:
-                return
-            
+            print(
+                f"You already have a container running with the image [{color(image, fg='cyan')}]"
+            )
+            if not yes_or_no(
+                    "Do you want to create another container with the same image?"
+            ):  # if "no"
+                sys.exit()
+
             ## CHECK & CHANGE PORTS ##
             print("You will might need to change the ports ...")
-            ports_new = checkPorts(usedPorts(), ports)
-            ports = ports_new
+            ports = checkPorts(usedPorts(), ports)
 
-        else:
-            print("No running containers of this image found. \nStarting new container")
-
-            # make sure the images exposed ports are allocated 
+            ## CHECK EXPOSED PORTS ##
             ports = exposedPortsHelp(image, ports)
 
+        else:  # no running containers of the image
+
+            print(
+                "No running containers of this image found. \nStarting new container"
+            )
+
+            # make sure the images exposed ports are allocated
+            ports = exposedPortsHelp(image, ports)
 
         ## START CONTAINER ##
-        container = docker.containers.run(  image=image,
-                                            ports=ports,
-                                            cap_add=cap_add,
-                                            devices=devices,
-                                            labels=label,
-                                            detach=True)
+        container = docker.containers.run(image=image,
+                                          ports=ports,
+                                          cap_add=cap_add,
+                                          devices=devices,
+                                          labels=label,
+                                          detach=True)
+
         print(f"Your container is now running with ID: {container.id}")
-        
 
-        if label['registry'] == 'docker.rdcloud.bms.com:443':
-
-            ## RUN BMS SPECIFIC ##
+        if label[
+                'registry'] == 'docker.rdcloud.bms.com:443':  ## RUN BMS SPECIFIC SETUP
 
             ## COPY KEYS TO CONTAINER ##
             copyKeys(container, keypath, user)
 
-
-            ## EXECUTE SETUP
+            ## EXECUTE SETUP ##
             print("Trying to set up stash")
             setupStash(container, user)
 
-            print(f"Access {color('Rstudio', fg='cyan')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
-            print(f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
+            ## INSTRUCTIONS ##
+            print(
+                f"Access {color('Rstudio', fg='cyan')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}"
+            )
+            print(
+                f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}"
+            )
 
+    else:  # image is not present locally
 
-    ## PULL ##    
-    else:
+        ## PULL ##
+        # TODO: Test connection before pulling
         pullImage(image)
         createAndRun(image)
-    
-    ## EXEC IN ##
-    if mode == 'ti':
+
+    if mode == 'ti':  ## EXEC IN ##
+
         dropIn(container, '', 'ti')
 
+
 def pullImage(image):
+    '''
+        pullImage(image)
+
+        Pull image using docker pull   
+            
+        Parameters
+        ----------
+        image: str
+            name of docker image to run 
+    '''
+
     pull_cmd = f"docker pull {image}"
     print(f"Attempting to pull  image [{image}] from the registry")
-    evalOrDie(pull_cmd, f"Failed to pull {image}. \nPlease make sure you are connected to the network. \nMake sure that you have your HTTP_PROXY set if you are pulling from DockerHub. \n")
-        
+    evalOrDie(
+        pull_cmd,
+        f"Failed to pull {image}. \nPlease make sure you are connected to the network. \nMake sure that you have your HTTP_PROXY set if you are pulling from DockerHub. \n"
+    )
+
+
 def testImagePresence(image_name):
-    if len(docker.images.list()) == 0:
+    '''
+        testImagePresence(image_name)
+
+        Test to see if image is present on the machine   
+            
+        Parameters
+        ----------
+        image_name: str
+            name of docker image to run 
+
+        Returns
+        --------
+        bool
+            if the image is present
+
+    '''
+
+    if len(docker.images.list()) == 0:  # no images found at all
         return False
     else:
         for image in docker.images.list():
@@ -89,14 +163,31 @@ def testImagePresence(image_name):
                 return True
             else:
                 continue
-        print("You do not have this image on your machine. I will now look for similar images...")
+        print(
+            "You do not have this image on your machine. I will now look for similar images..."
+        )
         return False
-     
-def findSimilarImages(image, registry):
+
+
+## NOT IN USE ##
+def findSimilarImages(image):
+    '''
+        findSimilarImages(image)
+
+        Test to see if image is present on the machine   
+            
+        Parameters
+        ----------
+        image: str
+            name of docker image to run
+
+    '''
+
     grep_cmd = f"docker images | grep {image} | awk '{{print $1; print $2; print $3}}'"
 
     # have to 'ignore' error codes when using grep so the program doesnt quit when no match is made
-    res, code = callWithPipe(grep_cmd, "There was an error trying to find similar images")
+    res, code = callWithPipe(
+        grep_cmd, "There was an error trying to find similar images")
 
     if res != '' and code == 0:
         info = res.replace('\n', ' ').split()
@@ -108,7 +199,20 @@ def findSimilarImages(image, registry):
     else:
         print("There were no similar images were found locally")
 
+
 def setupStash(container, user):
+    '''
+        setupStash(container, user)
+
+        Utility function to setup /stash/ on the container   
+            
+        Parameters
+        ----------
+        container: Container
+            container object to mount stash on
+
+    '''
+
     pwd = os.getcwd()
 
     # change directory to copy startup script
@@ -118,23 +222,29 @@ def setupStash(container, user):
     cpTo(container, f"./startup.py", "/tmp/")
     execute(container, 'chmod +x /tmp/startup.py')
     execute(container, f"sudo python /tmp/startup.py {user}")
-    
+
     #change back
     os.chdir(pwd)
+
 
 def usedPorts():
     containers = docker.containers.list()
     used = []
-    used += [val for c in containers for val in getPorts(c.id).values() if len(containers) >= 1]
+    used += [
+        val for c in containers for val in getPorts(c.id).values()
+        if len(containers) >= 1
+    ]
     print("USED: ")
     print(used)
-    return used  
+    return used
+
 
 def getPorts(cid):
     print(f"CID: {cid}")
     docker_port_cmd = f'docker port {cid}'
 
-    ports = evalOrDie(docker_port_cmd, "There was an error getting the ports")[0]
+    ports = evalOrDie(docker_port_cmd,
+                      "There was an error getting the ports")[0]
     port_dict = {}
     port_lines = ports.split('\n')
     #print(port_lines)
@@ -152,13 +262,15 @@ def getPorts(cid):
     print(port_dict)
     return port_dict
 
+
 def checkPorts(allocated, ports):
     if allocated == []:
         return ports
-    
+
     for key in ports.keys():
         if ports[key] in allocated:
-            print(f"The port {color(ports[key], fg='red')} is already allocated")
+            print(
+                f"The port {color(ports[key], fg='red')} is already allocated")
             yn = yes_or_no("Would you like to change the ports manually?")
             if yn:
                 new_port = changePortsManual(allocated, key)
@@ -166,7 +278,8 @@ def checkPorts(allocated, ports):
                 print(color("Changing the port randomly now...", fg='yellow'))
                 new_port = changePortsRand(allocated, key, ports)
             ports[key] = new_port
-    return ports 
+    return ports
+
 
 def isImageRunning(image):
     for container in docker.containers.list():
@@ -175,6 +288,7 @@ def isImageRunning(image):
             return True
     return False
 
+
 def changePortsRand(used, port, dict):
     print(dict[port])
     random_port = str(random.randint(3000, 9000))
@@ -182,33 +296,39 @@ def changePortsRand(used, port, dict):
     if random_port in used:
         random_port = int(random_port) + 1
     else:
-        print(f"The new port for {port}/tcp is: {random_port}")  
+        print(f"The new port for {port}/tcp is: {random_port}")
         return random_port
 
+
 def changePortsManual(used, inside):
-    
-    # TODO: test input to make sure 
-    new_port = int(input(f"What would you like to set {inside} (in the container) to (on your machine)? [int > 1023]"))
+
+    # TODO: test input to make sure
+    new_port = int(
+        input(
+            f"What would you like to set {inside} (in the container) to (on your machine)? [int > 1023]"
+        ))
     if new_port in used:
         print("That port is already allocated. Incrementing by one ...")
         new_port = int(new_port) + 1
     else:
-        print(f"The new port for {inside} is: {new_port}")  
+        print(f"The new port for {inside} is: {new_port}")
         return new_port
+
 
 def exposedPortsHelp(image, ports):
     print("EXPOSED PORTS")
     exp = docker.images.get(image).attrs['Config']['ExposedPorts']
-    
+
     for port in exp.keys():
         print(port)
         if port not in ports.keys():
             print(ports.keys())
-            print("\nThis container has exposed ports that you have not allocated!")
+            print(
+                "\nThis container has exposed ports that you have not allocated!"
+            )
             if yes_or_no(f"Do you want to change port {port}?"):
                 ports[port] = changePortsManual(usedPorts(), port)
             else:
                 ports.pop(port, None)
     print(ports)
-    return ports 
-
+    return ports

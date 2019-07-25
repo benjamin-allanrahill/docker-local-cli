@@ -9,7 +9,7 @@ from colors import color
 
 
 def evalOrDie(cmd, msg="ERROR:", ignore=False):
-'''
+    '''
         evalOrDie(cmd, msg="ERROR:", ignore=False)
 
         Wrapper func for subprocess.call(). Print specified error message.    
@@ -27,7 +27,7 @@ def evalOrDie(cmd, msg="ERROR:", ignore=False):
         -------
         str, int
             the STDOUT of the cmd and the return code  
-''' 
+    '''
     cmd = shlex.split(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()
@@ -61,7 +61,7 @@ def callWithPipe(cmd, msg="ERROR:", ignore=False):
         -------
         str, int
             the STDOUT of the cmd and the return code of the second process 
-''' 
+    '''
     # print(cmd)
     cmd1 = shlex.split(cmd.split('|')[0])
     cmd2 = shlex.split(cmd.split('|')[1])
@@ -97,7 +97,7 @@ def yes_or_no(question):
         -------
         bool
             if they answered yes or not  
-''' 
+    '''
     reply = str(input(question + ' (y/n): ')).lower().strip()
     if reply[:1] == 'y':
         return True
