@@ -3,7 +3,7 @@
 # docker_local_cli.py
 # high level script for CLI
 
-import argparse, re, docker, platform
+import argparse, re, docker, platform, os.path, getpass, sys 
 from colors import color
 from locker.run import createAndRun
 from locker.eval import callWithPipe, evalOrDie, yes_or_no
@@ -13,11 +13,12 @@ from locker.dropin import dropIn, sshIn
 from locker.list import ps, listImages, listRegistry
 from locker.files import add, grab
 
-ROOT = defaultRootPath()
-
 d = docker.from_env()
 
 def main():
+
+    ROOT = defaultRootPath()
+    USER = getpass.getuser()
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -32,7 +33,7 @@ def main():
     run_parser.add_argument('--label', dest='labels', nargs=2, metavar=('key', 'val'), action='append', help='[Optional] A label to append to your container < key, val >')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
     run_parser.add_argument('-p','--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', 2222],['8787', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
-    run_parser.add_argument('user', help='Your BMS username')
+    #run_parser.add_argument('user', help='Your BMS username')
 
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
@@ -80,10 +81,11 @@ def main():
             if args.keypath != None:
                 keydir = args.keypath
             else:
-                print("CHANGING TO DEFAULT PATH")
-                keydir = defaultRootPath(args.user) + ".ssh/"
+                #print("CHANGING TO DEFAULT PATH")
+                keydir = ROOT + ".ssh/"
+                print(keydir)
             ports = parsePorts(args.ports)
-            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=args.user, label=parseLabels(args.labels, args.image), cap_add=args.cap_add, devices=args.device)
+            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=USER, label=parseLabels(args.labels, args.image), cap_add=args.cap_add, devices=args.device)
         elif cmd == 'stop':
             stop(getContainers(args), mode=args.halt)
         elif cmd == 'clean-up':
@@ -109,6 +111,7 @@ def main():
                 ps(args.all)
 
 def getContainers(args, plusStopped=False):
+    _checkContainerL()
     if hasattr(args, 'container') and args.container != None:
         return d.containers.get(args.container)
     elif hasattr(args, 'label') and args.label != None:
@@ -133,14 +136,16 @@ def parsePorts(ports):
 
     return pdict
 
-def defaultRootPath(user):
+def defaultRootPath():
+    USER = getpass.getuser()
     OS = platform.system()
     if OS == 'Windows':
-        keypath = f'C:/Users/{user}/'
+        path = f'C:/Users/{USER}/'
     if OS == 'Darwin' or OS == 'Linux':
-        keypath = f'~/.ssh/'
-    print(f"the ssh path was changed to the deafult {OS} key path")
-    return keypath
+        path = '~/'
+    print(f"the root path was changed to the deafult {OS} key path")
+    print(path)
+    return path
 
 def parseLabels(labels, image):
     if labels == None:
@@ -160,6 +165,14 @@ def parseRegistry(image, labels):
         labels['registry'] = 'docker'
 
     return labels
+
+def _checkContainerL():
+    containers = d.containers.list()
+    print(containers)
+    print(len(containers))
+    if len(containers) == 0:
+        print("You do not have any containers running...")
+        sys.exit()
 
             
 if __name__ == "__main__":
