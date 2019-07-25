@@ -29,7 +29,7 @@ def parse_init():
         -------
         list
             the version
-''' 
+    ''' 
     with open(os.path.join(config.HERE, '__init__.py')) as f: file_data = f.read()
     return [regex.search(file_data).group(2) for regex in (config.VERSION,) ]
 
@@ -95,15 +95,15 @@ def main():
 
     args = parser.parse_args()
 
-# --- version
+    # --- version
     if args.version:
         print( 'Locker: Local Docker Version {}'.format(version) )
 
-# --- Subcommands
+    # --- Subcommands
     if args.subcommand:
         cmd = args.subcommand.lower()
 
-# --- Run
+    # --- Run
         if cmd == 'run':
             if args.keypath != None:
                 keydir = args.keypath
@@ -114,35 +114,35 @@ def main():
             ports = parsePorts(args.ports)
             createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=USER, label=parseLabels(args.image, args.labels), cap_add=args.cap_add, devices=args.device)
         
-# --- Stop        
+    # --- Stop        
         elif cmd == 'stop':
             stop(getContainers(args), mode=args.halt)
         
-# --- clean-up        
+    # --- clean-up        
         elif cmd == 'clean-up':
             yn = yes_or_no(f"This will {color('remove', fg='red')} your containers. Do you want to continue?")
             if not yn:
                 exit(0)
             cleanup(getContainers(args, plusStopped=True), args.quiet)
         
-# --- drop-in        
+    # --- drop-in        
         elif cmd == 'drop-in':
             dropIn(getContainers(args)[0], args.entrypoint, args.mode)
         
-# --- ssh        
+    # --- ssh        
         elif cmd == 'ssh':
             sshIn(getContainers(args)[0], args.entrypoint, args.mode)            
         
-# --- add        
+    # --- add        
         elif cmd == 'add':
             print(args.dest)
             add(getContainers(args)[0], ROOT + args.source, args.dest)
         
-# --- grab        
+    # --- grab        
         elif cmd == 'grab':
             grab(getContainers(args)[0], args.source, ROOT+ args.dest)
         
-# --- list        
+    # --- list        
         elif cmd == 'list':
             if args.images:
                 listImages()
@@ -168,7 +168,7 @@ def getContainers(args, plusStopped=False):
         -------
         list
             the container objects asked for 
-''' 
+    ''' 
     _checkContainerL()
     if hasattr(args, 'container') and args.container != None:
         return d.containers.get(args.container)
@@ -198,7 +198,7 @@ def parsePorts(ports):
         -------
         dict
             updated ports with kv pairs specified 
-''' 
+    ''' 
     pdict = {}
 
     for pair in ports:
@@ -218,7 +218,7 @@ def defaultRootPath():
         -------
         str
             default path of the root dir  
-''' 
+    ''' 
     USER = getpass.getuser()
     OS = platform.system()
     if OS == 'Windows':
@@ -246,7 +246,7 @@ def parseLabels(image, labels):
         -------
         dict
             updated labels with kv pairs specified 
-''' 
+    ''' 
     if labels == None:
         return parseRegistry(image, {})
     labels_d = {}
@@ -256,7 +256,7 @@ def parseLabels(image, labels):
     return labels_d
 
 def parseRegistry(image, labels):
-'''
+    '''
         parseRegistry(image, labels)
 
         Determine which registry the image is from  
@@ -272,7 +272,7 @@ def parseRegistry(image, labels):
         -------
         dict
             updated labels with 'regsitry' kv pair specified 
-'''   
+    '''   
     result = re.match('^docker.rdcloud.bms.com:443', image)
 
     if result != None:
@@ -282,11 +282,11 @@ def parseRegistry(image, labels):
     return labels
 
 def _checkContainerL():
-'''
+    '''
         _checkContainerL()
 
         Exit if no containers are running. 
-'''    
+    '''    
     containers = d.containers.list()
     print(containers)
     print(len(containers))
