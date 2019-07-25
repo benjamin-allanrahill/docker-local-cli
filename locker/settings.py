@@ -1,6 +1,7 @@
 
+class Settings():
 
-class BMSSettings():
+    # default settings 
     ports = [['22', 2222], ['8787', 8787]]
     
     device = ["/dev/fuse"]
