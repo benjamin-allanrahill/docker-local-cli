@@ -61,7 +61,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             print("Trying to set up stash")
             setupStash(container, user)
 
-            print(f"Access {color('Rstudio', fg='blue')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
+            print(f"Access {color('Rstudio', fg='cyan')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}")
             print(f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}")
 
 
@@ -93,15 +93,6 @@ def testImagePresence(image_name):
         return False
      
 def findSimilarImages(image, registry):
-
-    # if registry == 'bms':
-    #     vals = image.split(':')
-    #     registry = vals[0]
-    #     port = vals[1].split('/')[0]
-    #     repo = vals[1].split('/')[1]
-    #     tag = vals[2]
-    #     image = f"{registry}:{port}/{repo}"
-
     grep_cmd = f"docker images | grep {image} | awk '{{print $1; print $2; print $3}}'"
 
     # have to 'ignore' error codes when using grep so the program doesnt quit when no match is made
@@ -126,13 +117,13 @@ def setupStash(container, user):
 
     cpTo(container, f"./startup.py", "/tmp/")
     execute(container, 'chmod +x /tmp/startup.py')
-    execute(container, "sudo python /tmp/startup.py")
+    execute(container, f"sudo python /tmp/startup.py {user}")
     
     #change back
     os.chdir(pwd)
 
 def usedPorts():
-    contianers = docker.containers.list()
+    containers = docker.containers.list()
     used = []
     used += [val for c in containers for val in getPorts(c.id).values() if len(containers) >= 1]
     print("USED: ")
