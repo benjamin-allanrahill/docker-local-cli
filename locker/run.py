@@ -7,7 +7,7 @@ run.py
 """
 import subprocess, os, sys, socket, docker, platform, random
 from colors import color
-from locker.eval import evalOrDie, yes_or_no, callWithPipe
+from locker.eval import evalOrDie, yes_or_no, callWithPipe, detectTTY
 from locker.utils import cpFrom, cpTo, execute
 from locker.ssh import copyKeys
 from locker.dropin import dropIn
@@ -77,6 +77,29 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             ports = exposedPortsHelp(image, ports)
 
         ## START CONTAINER ##
+        
+        if mode == 'ti' and label['registry'] == 'docker':  ## If it is a non-BMS image and the user is running -ti
+            #print(ports)
+            ports_str = " -p ".join([
+                f"{ports[inside]}:{inside[:len(inside)-4]}"
+                for inside in ports.keys()
+            ])
+            #print(ports_str)
+            devices = [device.replace('/', '\/')for device in devices]
+            cmd = (
+                f"docker run -ti "
+                f"{' -p ' + ports_str if len(ports) >0 else ''} "
+                f" {'--cap-add=' + ' --cap-add='.join(cap_add) if len(cap_add)> 0 else ''} "
+                #f" {'--device=' + ' --device='.join(devices) if len(devices)> 0 else ''} "
+                f" --entrypoint bin/bash {image} ")
+
+            # print(cmd)
+            evalOrDie(cmd)
+            #detectTTY(res)
+            sys.exit()
+
+
+        # regular run 
         container = docker.containers.run(image=image,
                                           ports=ports,
                                           cap_add=cap_add,
@@ -86,8 +109,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 
         print(f"Your container is now running with ID: {container.id}")
 
-        if label[
-                'registry'] == 'docker.rdcloud.bms.com:443':  ## RUN BMS SPECIFIC SETUP
+        if label['registry'] == 'docker.rdcloud.bms.com:443':  ## RUN BMS SPECIFIC SETUP
 
             ## COPY KEYS TO CONTAINER ##
             copyKeys(container, keypath, user)
@@ -103,18 +125,23 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             print(
                 f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}"
             )
+            if mode == 'ti':  # EXEC IN 
+                execute(container, 'bin/bash', 'ti')
+
 
     else:  # image is not present locally
 
         ## PULL ##
         # TODO: Test connection before pulling
         pullImage(image)
-        createAndRun(image)
-
-    if mode == 'ti':  ## EXEC IN ##
-
-        dropIn(container, '', 'ti')
-
+        createAndRun(user=user,
+                     image=image,
+                     ports=ports,
+                     mode=mode,
+                     keypath=keypath,
+                     cap_add=cap_add,
+                     devices=devices,
+                     label=label)
 
 def pullImage(image):
     '''
@@ -159,6 +186,7 @@ def testImagePresence(image_name):
     else:
         for image in docker.images.list():
             name = image.attrs['RepoTags'][0]
+            print(name)
             if name == image_name:
                 return True
             else:
@@ -234,13 +262,13 @@ def usedPorts():
         val for c in containers for val in getPorts(c.id).values()
         if len(containers) >= 1
     ]
-    print("USED: ")
-    print(used)
+    #print("USED: ")
+    #print(used)
     return used
 
 
 def getPorts(cid):
-    print(f"CID: {cid}")
+    #print(f"CID: {cid}")
     docker_port_cmd = f'docker port {cid}'
 
     ports = evalOrDie(docker_port_cmd,
@@ -259,7 +287,7 @@ def getPorts(cid):
             #print(l_port)
             port_dict[c_port] = int(l_port)
 
-    print(port_dict)
+    #print(port_dict)
     return port_dict
 
 
@@ -283,14 +311,14 @@ def checkPorts(allocated, ports):
 
 def isImageRunning(image):
     for container in docker.containers.list():
-        print(container.image)
+        #print(container.image)
         if container.attrs['Config']['Image'] == image:
             return True
     return False
 
 
 def changePortsRand(used, port, dict):
-    print(dict[port])
+    #print(dict[port])
     random_port = str(random.randint(3000, 9000))
 
     if random_port in used:
@@ -316,13 +344,16 @@ def changePortsManual(used, inside):
 
 
 def exposedPortsHelp(image, ports):
-    print("EXPOSED PORTS")
-    exp = docker.images.get(image).attrs['Config']['ExposedPorts']
-
+    #print("EXPOSED PORTS")
+    try:
+        exp = docker.images.get(image).attrs['Config']['ExposedPorts']
+    except KeyError as no_ports:
+        # there are no exposed ports on the image
+        return {}
     for port in exp.keys():
-        print(port)
+        #print(port)
         if port not in ports.keys():
-            print(ports.keys())
+            #print(ports.keys())
             print(
                 "\nThis container has exposed ports that you have not allocated!"
             )
@@ -330,5 +361,5 @@ def exposedPortsHelp(image, ports):
                 ports[port] = changePortsManual(usedPorts(), port)
             else:
                 ports.pop(port, None)
-    print(ports)
+    #print(ports)
     return ports

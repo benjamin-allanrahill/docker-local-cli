@@ -4,7 +4,7 @@ eval.py
 @author: Benjamin Allan-Rahill
 
 """
-import subprocess, shlex, sys
+import subprocess, shlex, sys, re
 from colors import color
 
 
@@ -28,14 +28,22 @@ def evalOrDie(cmd, msg="ERROR:", ignore=False):
         str, int
             the STDOUT of the cmd and the return code  
     '''
-    cmd = shlex.split(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    if type(cmd) != list:
+        cmd = shlex.split(cmd)
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
+    #print(stdout, stderr)
 
     if proc.returncode != 0 and not ignore:
+        if detectTTY(str(stderr)):
+            print("Match founds..")
+            return subprocess.call(f"winpty {' '.join(cmd)}")
         print(color(msg, fg="yellow"))
         err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(
             cmd, proc.returncode, stdout, stderr)
+        print(err_str)
         #raise Exception(err_str)
         sys.exit()
 
@@ -80,6 +88,13 @@ def callWithPipe(cmd, msg="ERROR:", ignore=False):
 
     stdout, stderr = process_2.communicate()
     return stdout.decode('utf-8'), process_2.returncode
+
+
+def detectTTY(output):
+    print(output)
+    pattern = r'.*the input device is not a TTY.'
+    result = re.match(pattern, output)
+    return result
 
 
 # See here https://gist.github.com/garrettdreyfus/8153571

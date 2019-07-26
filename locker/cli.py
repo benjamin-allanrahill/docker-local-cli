@@ -60,7 +60,7 @@ def main():
 
 
     dropin_parser = subparsers.add_parser('drop-in', help="Run a command inside the container")
-    dropin_parser.add_argument('--cmd', dest='entrypoint', default='/bin/bash', help='The command you would like to start in the container.')
+    dropin_parser.add_argument('--cmd', dest='entrypoint', default='bash', help='The command you would like to start in the container.')
     dropin_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
     dropin_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
     
@@ -120,7 +120,7 @@ def main():
                 keydir = ROOT + ".ssh/"
                 print(keydir)
             ports = parsePorts(args.ports)
-            createAndRun(image=args.image, ports=ports, mode=args.mode, keypath=keydir, user=USER, label=parseLabels(args.image, args.labels), cap_add=args.cap_add, devices=args.device)
+            createAndRun(image=parseImageTag(args.image), ports=ports, mode=args.mode, keypath=keydir, user=USER, label=parseLabels(args.image, args.labels), cap_add=args.cap_add, devices=args.device)
         
     # --- Stop        
         elif cmd == 'stop':
@@ -135,7 +135,7 @@ def main():
         
     # --- drop-in        
         elif cmd == 'drop-in':
-            dropIn(getContainers(args)[0], args.entrypoint, args.mode)
+            dropIn(getContainers(args, plusStopped=False), args.entrypoint, args.mode)
         
     # --- ssh        
         elif cmd == 'ssh':
@@ -189,7 +189,7 @@ def getContainers(args, plusStopped=False):
         return d.containers.list(all=plusStopped)
     else:
         print("Only the last created container")
-        return d.containers.list(limit=1, all=plusStopped)
+        return d.containers.list(all=plusStopped)[0]
 
 def parsePorts(ports):
     '''
@@ -211,8 +211,8 @@ def parsePorts(ports):
 
     for pair in ports:
         pdict[f'{pair[0]}/tcp'] = int(pair[1])
-    print(ports)
-    print(pdict)
+    #print(ports)
+    #print(pdict)
 
     return pdict
 
@@ -295,12 +295,17 @@ def _checkContainerL():
 
         Exit if no containers are running. 
     '''    
-    containers = d.containers.list()
-    print(containers)
-    print(len(containers))
+    containers = d.containers.list(True)
+    #print(containers)
+    #print(len(containers))
     if len(containers) == 0:
-        print("You do not have any containers running...")
+        print("You do not have any containers...")
         sys.exit()
+
+def parseImageTag(image):
+    if len(image.split(':')) == 1:
+        image += ":latest"  # specify tag for later checking 
+    return image 
 
             
 if __name__ == "__main__":

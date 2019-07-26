@@ -22,7 +22,7 @@ def cpFrom(container, file_path, dest):
 def execute(container, cmd, flags=''):
     # print(f"EXECUTING: {cmd}")
     docker_exec_cmd = ("docker exec "
-                       f"-{flags} "
+                       f"{'-' + flags if flags != '' else ''} "
                        f"{container.id[:3]} "
                        f"{cmd}")
-    call(docker_exec_cmd)
+    evalOrDie(docker_exec_cmd)

@@ -7,6 +7,7 @@ ssh.py
 """
 import paramiko, os, cmd, subprocess
 from locker.utils import cpFrom, cpTo, execute
+from locker.eval import evalOrDie
 from colors import color
 
 
@@ -23,11 +24,12 @@ def ssh(dport):
     '''
     ssh_cmd = ['ssh', 'domino@localhost', '-p', f'{dport}']
     # subprocess.call(' '.join(ssh_cmd), shell=True)
-    try:
-        subprocess.call(' '.join(ssh_cmd), shell=True)
-    except:
-        print("There was an error during ssh")
-        exit(1)
+    evalOrDie(' '.join(ssh_cmd), "There was an error during ssh")
+    # try:
+    #     subprocess.call(' '.join(ssh_cmd), shell=True)
+    # except:
+    #     print("There was an error during ssh")
+    #     exit(1)
 
 
 def copyKeys(container, location, user):
@@ -53,7 +55,7 @@ def copyKeys(container, location, user):
     if not os.path.exists(location):
         location = input(
             f"I was looking for your ssh keys at {color(location, fg='red')}. Where should I look?"
-        )
+        ).strip()
     #change wkdir do that keys can be copied
     os.chdir(location)
 
@@ -63,8 +65,12 @@ def copyKeys(container, location, user):
     # append public key to authorized keys
     execute(
         container,
-        f"cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys"
+        f" sh -c 'cat /home/domino/.ssh/id_rsa_{user}.pub >> /home/domino/.ssh/authorized_keys'"
     )
+
+    execute(container, "chmod 700 /home/domino/.ssh")
+    execute(container, f"chmod 600 /home/domino/.ssh/id_rsa_{user}")
+    execute(container, f"chmod 644 /home/domino/.ssh/id_rsa_{user}.pub")
 
     os.chdir(wkdir)
 
