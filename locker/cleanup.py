@@ -5,7 +5,12 @@ def cleanup(containers, quiet):
             c.stop()
             c.remove()
     else:
-        for c in containers:
-            print(f"Removing container: {c.id}")
-            c.stop()
-            c.remove()
+        if type(containers) != list:
+            print(f"Removing container: {containers.id}")
+            containers.stop()
+            containers.remove()
+        else:
+            for c in containers:
+                print(f"Removing container: {c.id}")
+                c.stop()
+                c.remove()
