@@ -82,3 +82,32 @@ def searchDockerHub(name, limit='15'):
     '''
     search_cmd = f'docker search {name} --limit {limit}'
     print(evalOrDie(search_cmd)[0])
+
+def findSimilarImages(image):
+    '''
+        findSimilarImages(image)
+
+        See if there are any similar images by repository
+
+        Parameters: 
+        ===========
+        image: str
+            The name of the original image 
+
+    '''
+
+    grep_cmd = f"docker images | grep {image} | awk '{{print $1; print $2; print $3}}'"
+
+    # have to 'ignore' error codes when using grep so the program doesnt quit when no match is made
+    res, code = callWithPipe(
+        grep_cmd, "There was an error trying to find similar images, on Windows this only works in Git Bash")
+
+    if res != '' and code == 0:
+        info = res.replace('\n', ' ').split()
+        print("Found these images under the same repository:")
+        print(*(f"\t{info[i*3]}" for i in range(len(info) // 3)))
+        
+        print("You can run one of these using the --env flag for `locker run`")
+    else:
+        print("There were no similar images were found locally")
+        print("You can use `locker search` or `locker list` to find other images ")

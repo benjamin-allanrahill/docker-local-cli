@@ -61,7 +61,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
                 sys.exit()
 
             ## CHECK & CHANGE PORTS ##
-            print("You will might need to change the ports ...")
+            print("You will need to change the ports ...")
             ports = checkPorts(usedPorts(), ports)
 
             ## CHECK EXPOSED PORTS ##
@@ -77,15 +77,16 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             ports = exposedPortsHelp(image, ports)
 
         ## START CONTAINER ##
-        
-        if mode == 'ti' and label['registry'] == 'docker':  ## If it is a non-BMS image and the user is running -ti
+
+        if mode == 'ti' and label[
+                'registry'] == 'docker':  ## If it is a non-BMS image and the user is running -ti
             #print(ports)
             ports_str = " -p ".join([
                 f"{ports[inside]}:{inside[:len(inside)-4]}"
                 for inside in ports.keys()
             ])
             #print(ports_str)
-            devices = [device.replace('/', '\/')for device in devices]
+            devices = [device.replace('/', '\/') for device in devices]
             cmd = (
                 f"docker run -ti "
                 f"{' -p ' + ports_str if len(ports) >0 else ''} "
@@ -98,8 +99,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             #detectTTY(res)
             sys.exit()
 
-
-        # regular run 
+        # regular run
         container = docker.containers.run(image=image,
                                           ports=ports,
                                           cap_add=cap_add,
@@ -109,7 +109,8 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 
         print(f"Your container is now running with ID: {container.id}")
 
-        if label['registry'] == 'docker.rdcloud.bms.com:443':  ## RUN BMS SPECIFIC SETUP
+        if label[
+                'registry'] == 'docker.rdcloud.bms.com:443':  ## RUN BMS SPECIFIC SETUP
 
             ## COPY KEYS TO CONTAINER ##
             copyKeys(container, keypath, user)
@@ -125,9 +126,8 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
             print(
                 f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}"
             )
-            if mode == 'ti':  # EXEC IN 
+            if mode == 'ti':  # EXEC IN
                 execute(container, 'bin/bash', 'ti')
-
 
     else:  # image is not present locally
 
@@ -142,6 +142,7 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
                      cap_add=cap_add,
                      devices=devices,
                      label=label)
+
 
 def pullImage(image):
     '''
@@ -186,7 +187,7 @@ def testImagePresence(image_name):
     else:
         for image in docker.images.list():
             name = image.attrs['RepoTags'][0]
-            print(name)
+            #print(name)
             if name == image_name:
                 return True
             else:
@@ -195,37 +196,6 @@ def testImagePresence(image_name):
             "You do not have this image on your machine. I will now look for similar images..."
         )
         return False
-
-
-## NOT IN USE ##
-def findSimilarImages(image):
-    '''
-        findSimilarImages(image)
-
-        Test to see if image is present on the machine   
-            
-        Parameters
-        ----------
-        image: str
-            name of docker image to run
-
-    '''
-
-    grep_cmd = f"docker images | grep {image} | awk '{{print $1; print $2; print $3}}'"
-
-    # have to 'ignore' error codes when using grep so the program doesnt quit when no match is made
-    res, code = callWithPipe(
-        grep_cmd, "There was an error trying to find similar images")
-
-    if res != '' and code == 0:
-        info = res.replace('\n', ' ').split()
-        print("Found these images under the same repository:")
-        print(*(f"\t{info[i*3]}" for i in range(len(info) // 3)))
-        answ = yes_or_no("would you like to run one of these? (y/n)")
-        if answ:
-            chooseImage()
-    else:
-        print("There were no similar images were found locally")
 
 
 def setupStash(container, user):
@@ -279,7 +249,7 @@ def getPorts(cid):
     for line in port_lines:
         if line != '':
             port = line.split('->')
-            print(port)
+            #print(port)
             #print(port)
             c_port = port[0].rstrip()
             #print(c_port)
@@ -324,7 +294,7 @@ def changePortsRand(used, port, dict):
     if random_port in used:
         random_port = int(random_port) + 1
     else:
-        print(f"The new port for {port}/tcp is: {random_port}")
+        print(f"The new port for {port} is: {random_port}")
         return random_port
 
 

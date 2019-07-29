@@ -38,7 +38,7 @@ def evalOrDie(cmd, msg="ERROR:", ignore=False):
 
     if proc.returncode != 0 and not ignore:
         if detectTTY(str(stderr)):
-            print("Match founds..")
+            #print("Match founds..")
             return subprocess.call(f"winpty {' '.join(cmd)}")
         print(color(msg, fg="yellow"))
         err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(
@@ -91,7 +91,22 @@ def callWithPipe(cmd, msg="ERROR:", ignore=False):
 
 
 def detectTTY(output):
-    print(output)
+    '''
+        detectTTY(output)
+
+        Determine if the user is using git bash or another shell that does not allow TTY    
+            
+        Parameters
+        ----------
+        output: str
+            error output from the call of a command
+        Returns
+        -------
+        bool
+            if the shell is a TTY  
+    '''
+
+    #print(output)
     pattern = r'.*the input device is not a TTY.'
     result = re.match(pattern, output)
     return result

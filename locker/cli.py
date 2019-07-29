@@ -16,6 +16,7 @@ from locker.cleanup import cleanup
 from locker.dropin import dropIn, sshIn
 from locker.list import ps, listImages, listRegistry
 from locker.files import add, grab
+from locker.settings import settings
 
 d = docker.from_env()
 
@@ -30,22 +31,19 @@ def parse_init():
         list
             the version
     ''' 
-    # with open(os.path.join(config.HERE, '__init__.py')) as f:
-    #     file_data = f.read()
-    #     return [regex.search(file_data).group(2) for regex in (config.VERSION,) ]
+    with open(os.path.join(settings.HERE, '__init__.py')) as f:
+        file_data = f.read()
+        return [regex.search(file_data).group(2) for regex in (settings.VERSION,) ]
 
 def main():
-    '''
-    docstring here
-    '''
-    # [version] = parse_init()
+    [version] = parse_init()
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-V', '--version', dest='version', action='store_true', help='print Locker CLI version')
 
-    # parser.add_argument('-V', '--version', dest='version', action='store_true', help='print Locker CLI version')
 
     subparsers = parser.add_subparsers(dest='subcommand', title='subcommands', help='Available sub-commands')
-    
+
     
     add_parser = subparsers.add_parser('add', help="Add a file or dir to the container")
     add_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
@@ -55,7 +53,7 @@ def main():
 
     cleanup_parser = subparsers.add_parser('clean-up', help="Clean up running containers")
     cleanup_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
-    cleanup_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
+    cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="The container to add the files to")
     cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
 
 
@@ -78,34 +76,35 @@ def main():
     
 
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
-    run_parser.add_argument('--cap-add', dest='cap_add', nargs=1, action='append', default=["SYS_ADMIN", "DAC_READ_SEARCH"], help='Add linux capabilities')
+    run_parser.add_argument('--cap-add', dest='cap_add', nargs=1, action='append', help='Add linux capabilities')
     run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
-    run_parser.add_argument('--device', dest='device', nargs=1, default=["/dev/fuse"], help='Add device to the container')
-    run_parser.add_argument('--env', '--image', dest='image', default='docker.rdcloud.bms.com:443/rr:Genomics2019-03_base', help='[Optional] The environment that you would like to run locally.')
+    run_parser.add_argument('--device', dest='device', nargs=1, help='Add device to the container')
+    run_parser.add_argument('--env', '--image', dest='image', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('--label', dest='labels', nargs=2, metavar=('key', 'val'), action='append', help='[Optional] A label to append to your container < key, val >')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
-    run_parser.add_argument('-p', '--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), default=[['22', 2222], ['8787', 8787]], help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
-    
-    #run_parser.add_argument('user', help='Your BMS username')
+    run_parser.add_argument('-p', '--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
+    run_parser.add_argument('--user', help='Your BMS username')
+
 
     ssh_parser = subparsers.add_parser('ssh',   help="Ssh into a running container")
     ssh_parser.add_argument('--cmd', dest='entrypoint', default='/bin/bash', help='The command you would like to start in the container.')
-    ssh_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
+    ssh_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="The container to add the files to")
     ssh_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
+
 
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
-    stop_parser.add_argument('-r', '--registry', dest='registry', default='bms', help='[Optional] Stop the images labeled with a particular registry')
+    stop_parser.add_argument('-r', '--registry', dest='label', default='docker.rdcloud.bms.com:443', help='[Optional] Stop the images labeled with a particular registry')
     stop_parser.add_argument('--halt', '--slam', dest='halt', default=False, action='store_true', help='[Optional] Force the stop of a running container (uses SIGKILL)')
 
     args = parser.parse_args()
+    
     ROOT = defaultRootPath()
-    USER = getpass.getuser()
 
-    # # --- version
-    # if args.version:
-    #     print( 'Locker: Local Docker Version {}'.format(version) )
+    # --- version
+    if args.version:
+        print( 'Locker: Local Docker Version {}'.format(version) )
 
     # --- Subcommands
     if args.subcommand:
@@ -113,14 +112,17 @@ def main():
 
     # --- Run
         if cmd == 'run':
-            if args.keypath != None:
-                keydir = args.keypath
-            else:
-                #print("CHANGING TO DEFAULT PATH")
-                keydir = ROOT + ".ssh/"
-                print(keydir)
-            ports = parsePorts(args.ports)
-            createAndRun(image=parseImageTag(args.image), ports=ports, mode=args.mode, keypath=keydir, user=USER, label=parseLabels(args.image, args.labels), cap_add=args.cap_add, devices=args.device)
+            image = args.image if args.image else settings.image
+            ports = parsePorts(args.ports) if args.ports else parsePorts(settings.ports)
+            mode = args.mode
+            keypath = args.keypath if args.keypath else ROOT + '.ssh/'
+            user = args.user if args.user else settings.USER
+            labels = parseLabels(image, args.labels)
+            caps = args.cap_add if args.cap_add else settings.capabilities
+            devices = args.device if args.device else settings.device
+
+            #run 
+            createAndRun(image=image, ports=ports, mode=mode, keypath=keypath, user=user, label=labels, cap_add=caps, devices=devices)
         
     # --- Stop        
         elif cmd == 'stop':
@@ -179,17 +181,37 @@ def getContainers(args, plusStopped=False):
     ''' 
     _checkContainerL()
     if hasattr(args, 'container') and args.container != None:
-        return d.containers.get(args.container)
+        return [d.containers.get(cid) for cid in args.container.split]
     elif hasattr(args, 'label') and args.label != None:
-        print(args.label)
-        print("Filtering containers")
+        # print(args.label)
+        # print("Filtering containers")
         return d.containers.list(filters={'registry': args.registry}, all=plusStopped)
     elif hasattr(args, 'all') and args.all:
-        print("ALL containers were specified")
+        # print("ALL containers were specified")
         return d.containers.list(all=plusStopped)
     else:
-        print("Only the last created container")
+        # print("Only the last created container")
         return d.containers.list(all=plusStopped)[0]
+
+def defaultRootPath():
+    '''
+        defaultRootPath()
+
+        Determine the default root path (OS specific)
+
+        Returns
+        -------
+        str
+            default path of the root dir  
+    '''
+    if settings.OS == 'Windows':
+        path = f'C:/Users/{settings.USER}/'
+    if settings.OS == 'Darwin' or settings.OS == 'Linux':
+        path = '~/'
+    #print(f"the root path was changed to the deafult {OS} key path")
+    #print(path)
+    return path
+
 
 def parsePorts(ports):
     '''
@@ -215,27 +237,6 @@ def parsePorts(ports):
     #print(pdict)
 
     return pdict
-
-def defaultRootPath():
-    '''
-        defaultRootPath()
-
-        Determine the default root path (OS specific)
-
-        Returns
-        -------
-        str
-            default path of the root dir  
-    ''' 
-    USER = getpass.getuser()
-    OS = platform.system()
-    if OS == 'Windows':
-        path = f'C:/Users/{USER}/'
-    if OS == 'Darwin' or OS == 'Linux':
-        path = '~/'
-    #print(f"the root path was changed to the deafult {OS} key path")
-    #print(path)
-    return path
 
 def parseLabels(image, labels):
     '''
@@ -279,7 +280,7 @@ def parseRegistry(image, labels):
         Returns
         -------
         dict
-            updated labels with 'regsitry' kv pair specified 
+            updated labels with 'registry' kv pair specified 
     '''   
     result = re.match('^docker.rdcloud.bms.com:443', image)
 

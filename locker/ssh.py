@@ -23,13 +23,7 @@ def ssh(dport):
             the port locally that maps to the ssh port in the container
     '''
     ssh_cmd = ['ssh', 'domino@localhost', '-p', f'{dport}']
-    # subprocess.call(' '.join(ssh_cmd), shell=True)
     evalOrDie(' '.join(ssh_cmd), "There was an error during ssh")
-    # try:
-    #     subprocess.call(' '.join(ssh_cmd), shell=True)
-    # except:
-    #     print("There was an error during ssh")
-    #     exit(1)
 
 
 def copyKeys(container, location, user):
@@ -53,9 +47,13 @@ def copyKeys(container, location, user):
 
     # test to see if location exists
     if not os.path.exists(location):
-        location = input(
-            f"I was looking for your ssh keys at {color(location, fg='red')}. Where should I look?"
-        ).strip()
+        try:
+            location = input(
+                f"I was looking for your ssh keys at {color(location, fg='red')}. Where should I look?"
+            ).strip()
+        except FileNotFoundError as exc:
+            print("That path doesn't exist. ")
+            location = input("Please enter a valid path.")
     #change wkdir do that keys can be copied
     os.chdir(location)
 
