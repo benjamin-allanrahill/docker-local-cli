@@ -53,8 +53,10 @@ def main():
 
     cleanup_parser = subparsers.add_parser('clean-up', help="Clean up running containers")
     cleanup_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
-    cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="[Optional]The container(s) to remove")
-    cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
+    cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="[Optional] The container(s) to remove")
+    cleanup_parser.add_argument('-r', '--registry', dest='label', default='docker.rdcloud.bms.com:443', help='[Optional] Remove the images labeled with a particular registry')
+
+    #cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
 
 
     dropin_parser = subparsers.add_parser('drop-in', help="Run a command inside the container")
@@ -146,7 +148,7 @@ def main():
         
     # --- add        
         elif cmd == 'add':
-            print(args.dest)
+            # print(args.dest)
             add(getContainers(args)[0], ROOT + args.source, args.dest)
         
     # --- grab        
@@ -283,7 +285,7 @@ def parseRegistry(image, labels):
         dict
             updated labels with 'registry' kv pair specified 
     '''   
-    result = re.match('^docker.rdcloud.bms.com:443', image)
+    result = re.match('^(docker.rdcloud.bms.com:443)', image)
 
     if result != None:
         labels['registry'] = 'docker.rdcloud.bms.com:443'

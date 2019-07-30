@@ -8,7 +8,7 @@ import subprocess, shlex, sys, re
 from colors import color
 
 
-def evalOrDie(cmd, msg="ERROR:", ignore=False):
+def evalOrDie(cmd, msg="ERROR:", ignore=False, verbose=False):
     '''
         evalOrDie(cmd, msg="ERROR:", ignore=False)
 
@@ -43,7 +43,7 @@ def evalOrDie(cmd, msg="ERROR:", ignore=False):
         print(color(msg, fg="yellow"))
         err_str = "COMMAND:\t {} \n\texited with exit value\t {} \n\twith output:\t {} \n\tand error:\t {}".format(
             cmd, proc.returncode, stdout, stderr)
-        print(err_str)
+        if verbose: print(err_str)
         #raise Exception(err_str)
         sys.exit()
 

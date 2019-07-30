@@ -81,7 +81,7 @@ def searchDockerHub(name, limit='15'):
             number of images to print
     '''
     search_cmd = f'docker search {name} --limit {limit}'
-    print(evalOrDie(search_cmd)[0])
+    print(evalOrDie(search_cmd)[0], "Error getting images...\nPlease make sure you are connected to the network")
 
 def findSimilarImages(image):
     '''
