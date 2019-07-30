@@ -6,6 +6,8 @@
 
 > A command-line tool to run Domino environments a local machine
 
+[TOC]
+
 
 ## Purpose 
 
