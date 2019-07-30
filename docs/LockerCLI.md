@@ -2,10 +2,10 @@
 
 > Benjamin Allan-Rahill, Intern
 
+![Logo](../logo.jpg?raw=True "Title")
+
 > A command-line tool to run Domino environments a local machine
 
-
-![Logo](../logo.jpg?raw=True "Title")
 
 ## Purpose 
 
@@ -32,9 +32,20 @@ The simple commands allow users to get running quickly!
 
 3. Install 
 
+Make sure you have your proxys set.
+
 ```bash
     python3 -m pip3 install .
 ```
+
+## Local Installation Dependencies
+
+Locker asserts that a few things are installed:
+* python3
+* Docker [instructions here](https://biodoc.pri.bms.com:8443/display/CG/Docker+for+RR+Development)
+
+**Please make sure these are installed before you try to run Locker.**
+
 
 ## Getting Help
 
@@ -202,7 +213,7 @@ new(no)->exit
 1. Checks to see if the image/environment is downloaded.
    1. If not, the script will attempt to pull from the registry.
       * This requires network connection
-    2. You have the ability to search for similar images if you would like to. 
+    1. You have the ability to search for similar images if you would like to. 
 2. Checks to see if there is a running container with that environment.
    1. If so, asks if you want to start a separate one.
 3. Check the port mappings
