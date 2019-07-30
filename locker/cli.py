@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 
 """
 cli.py
@@ -208,7 +208,7 @@ def defaultRootPath():
     if settings.OS == 'Windows':
         path = f'C:/Users/{settings.USER}/'
     if settings.OS == 'Darwin' or settings.OS == 'Linux':
-        path = '~/'
+        path = f'/Users/{settings.USER}/'
     #print(f"the root path was changed to the deafult {OS} key path")
     #print(path)
     return path

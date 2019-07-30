@@ -46,16 +46,16 @@ def copyKeys(container, location, user):
     wkdir = os.getcwd()
 
     # test to see if location exists
-    if not os.path.exists(location):
-        try:
-            location = input(
-                f"I was looking for your ssh keys at {color(location, fg='red')}. Where should I look?"
-            ).strip()
-        except FileNotFoundError as exc:
-            print("That path doesn't exist. ")
-            location = input("Please enter a valid path.")
+    location = input(
+        f"I was looking for your ssh keys at {color(location, fg='red')}. Where should I look? "
+    ).strip()
+
+    while not os.path.exists(location):
+        print("That path doesn't exist. ")
+        location = input("Please enter a valid path: ")
+
     #change wkdir do that keys can be copied
-    os.chdir(location)
+    os.chdir(os.path.abspath(location))
 
     cpTo(container, f"id_rsa", f"/home/domino/.ssh/id_rsa_{user}")
     cpTo(container, f"id_rsa.pub", f"/home/domino/.ssh/id_rsa_{user}.pub")
