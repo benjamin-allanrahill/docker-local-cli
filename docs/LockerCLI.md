@@ -4,6 +4,9 @@
 
 > A command-line tool to run Domino environments a local machine
 
+
+![Logo](../logo.jpg?raw=True "Title")
+
 ## Purpose 
 
 This command-line interface was developed to add syntactic sugar to the regular Docker commands. This 
