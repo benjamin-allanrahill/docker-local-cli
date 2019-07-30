@@ -46,25 +46,25 @@ def main():
 
     
     add_parser = subparsers.add_parser('add', help="Add a file or dir to the container")
-    add_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
+    add_parser.add_argument('--container', metavar="ID", help="[Optional] The container to add the files to")
     add_parser.add_argument('source', help='The local file')
     add_parser.add_argument('dest', type=str, help='Where you want the file to end up')
 
 
     cleanup_parser = subparsers.add_parser('clean-up', help="Clean up running containers")
     cleanup_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
-    cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="The container to add the files to")
+    cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="[Optional]The container(s) to remove")
     cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
 
 
     dropin_parser = subparsers.add_parser('drop-in', help="Run a command inside the container")
-    dropin_parser.add_argument('--cmd', dest='entrypoint', default='bash', help='The command you would like to start in the container.')
-    dropin_parser.add_argument('--container', metavar="ID", help="The container to add the files to")
+    dropin_parser.add_argument('--cmd', dest='entrypoint', default='bash', help='[Optional] The command you would like to start in the container.')
+    dropin_parser.add_argument('--container', metavar="ID", help="[Optional] The container to add the files to")
     dropin_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
     
 
     grab_parser = subparsers.add_parser('grab', help="Grab a file or dir from the container")
-    grab_parser.add_argument('--container', metavar="ID", help="The container to grab the files from")
+    grab_parser.add_argument('--container', metavar="ID", help="[Optional] The container to grab the files from")
     grab_parser.add_argument('source', help='The path')
     grab_parser.add_argument('dest', help='Where you want the file to end up')
     
@@ -76,25 +76,26 @@ def main():
     
 
     run_parser = subparsers.add_parser('run', help='Run an environment on your local machine.')
-    run_parser.add_argument('--cap-add', dest='cap_add', nargs=1, action='append', help='Add linux capabilities')
-    run_parser.add_argument('--cmd', dest='entrypoint', help='The command you would like to start in the container.')
-    run_parser.add_argument('--device', dest='device', nargs=1, help='Add device to the container')
+    run_parser.add_argument('--cap-add', dest='cap_add', nargs=1, action='append', help='[Optional] Add linux capabilities')
+    run_parser.add_argument('--cmd', dest='entrypoint', help='[Optional] The command you would like to start in the container.')
+    run_parser.add_argument('--device', dest='device', nargs=1, help='[Optional] Add device to the container')
     run_parser.add_argument('--env', '--image', dest='image', help='[Optional] The environment that you would like to run locally.')
     run_parser.add_argument('--keys', dest='keypath', help='[Optional] The location in which your SSH keys are stored.')
     run_parser.add_argument('--label', dest='labels', nargs=2, metavar=('key', 'val'), action='append', help='[Optional] A label to append to your container < key, val >')
     run_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='d', help='[Optional] Run the environment detached or interactive.')
     run_parser.add_argument('-p', '--ports', dest='ports', nargs=2, action='append', metavar=('inside', 'outside'), help="[Optional] The ports you would like to use to run the servers on [ssh, RStudio server].")
-    run_parser.add_argument('--user', help='Your BMS username')
+    run_parser.add_argument('--user', help='[Optional] Your BMS username')
 
 
     ssh_parser = subparsers.add_parser('ssh',   help="Ssh into a running container")
     ssh_parser.add_argument('--cmd', dest='entrypoint', default='/bin/bash', help='The command you would like to start in the container.')
-    ssh_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="The container to add the files to")
+    ssh_parser.add_argument('-c', '--container', metavar="ID", help="The container to add the files to")
     ssh_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
 
 
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
+    stop_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="The container to add the files to")
     stop_parser.add_argument('-r', '--registry', dest='label', default='docker.rdcloud.bms.com:443', help='[Optional] Stop the images labeled with a particular registry')
     stop_parser.add_argument('--halt', '--slam', dest='halt', default=False, action='store_true', help='[Optional] Force the stop of a running container (uses SIGKILL)')
 
@@ -181,11 +182,11 @@ def getContainers(args, plusStopped=False):
     ''' 
     _checkContainerL()
     if hasattr(args, 'container') and args.container != None:
-        return [d.containers.get(cid) for cid in args.container.split]
+        return [d.containers.get(cid) for cid in args.container]
     elif hasattr(args, 'label') and args.label != None:
-        # print(args.label)
+        print(args.label)
         # print("Filtering containers")
-        return d.containers.list(filters={'registry': args.registry}, all=plusStopped)
+        return d.containers.list(filters={'label': f"registry"}, all=plusStopped)
     elif hasattr(args, 'all') and args.all:
         # print("ALL containers were specified")
         return d.containers.list(all=plusStopped)
