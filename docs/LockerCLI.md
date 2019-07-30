@@ -6,8 +6,26 @@
 
 > A command-line tool to run Domino environments a local machine
 
-[TOC]
-
+- [Locker](#Locker)
+  - [Purpose](#Purpose)
+  - [Installation](#Installation)
+  - [Local Installation Dependencies](#Local-Installation-Dependencies)
+  - [Getting Help](#Getting-Help)
+  - [Subcommands](#Subcommands)
+    - [`add`](#add)
+    - [`clean-up`](#clean-up)
+    - [`drop-in`](#drop-in)
+        - [`mode`](#mode)
+    - [`grab`](#grab)
+    - [`list`](#list)
+    - [`run`](#run)
+        - [Steps](#Steps)
+        - [BMS Specific](#BMS-Specific)
+      - [Usage](#Usage)
+    - [`ssh`](#ssh)
+      - [Usage](#Usage-1)
+        - [`mode`](#mode-1)
+    - [`stop`](#stop)
 
 ## Purpose 
 
@@ -187,28 +205,6 @@ The `run` subcommand is the main command of locker. **All arguments are optional
 
 The `run` command does the following:
 
-```flow 
-st=>start: run
-pull=>operation: Pull the Image
-connected=>condition: connected to the network?
-new=>condition: new container? 
-changePorts=>operation: change ports
-downloaded=>condition: image downloaded?
-running=>condition: image running?
-done=>end: start container 
-exit=>end: exit
-
-
-st->downloaded
-downloaded(yes)->running
-downloaded(no)->connected
-connected(yes)->pull->done 
-connected(no)->exit 
-running(yes)->new 
-running(no)->done 
-new(yes)->changePorts(left)->done
-new(no)->exit
-```
 
 ##### Steps
 
