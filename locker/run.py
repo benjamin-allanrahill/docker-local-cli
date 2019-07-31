@@ -112,17 +112,19 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
         if label[
                 'registry'] == 'docker.rdcloud.bms.com:443':  ## RUN BMS SPECIFIC SETUP
 
-            ## COPY KEYS TO CONTAINER ##
-            copyKeys(container, keypath, user)
+            if yes_or_no("Do you have SSH keys to mount stash?"):
+                    
+                ## COPY KEYS TO CONTAINER ##
+                copyKeys(container, keypath, user)
 
-            ## EXECUTE SETUP ##
-            print("Trying to set up stash")
-            try:  
-                setupStash(container, user)
-            except:
-                print("Could not mount /stash/. \nMake sure you're connected to the BMS network.")
-                if yes_or_no("Do you want to clean-up the container?"):
-                    return container.remove()
+                ## EXECUTE SETUP ##
+                print("Trying to set up stash")
+                try:  
+                    setupStash(container, user)
+                except:
+                    print("Could not mount /stash/. \nMake sure you're connected to the BMS network.")
+                    if yes_or_no("Do you want to clean-up the container?"):
+                        return container.remove()
                 
 
             ## INSTRUCTIONS ##

@@ -42,8 +42,6 @@ def copyKeys(container, location, user):
             the name of the user 
 
     '''
-    if not yes_or_no("Do you have SSH keys to add?"):
-        return
 
     wkdir = os.getcwd()
 
