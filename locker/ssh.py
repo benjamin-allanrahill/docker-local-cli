@@ -7,7 +7,7 @@ ssh.py
 """
 import paramiko, os, cmd, subprocess
 from locker.utils import cpFrom, cpTo, execute
-from locker.eval import evalOrDie
+from locker.eval import evalOrDie, yes_or_no
 from colors import color
 
 
