@@ -117,7 +117,13 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 
             ## EXECUTE SETUP ##
             print("Trying to set up stash")
-            setupStash(container, user)
+            try:  
+                setupStash(container, user)
+            except:
+                print("Could not mount /stash/. \nMake sure you're connected to the BMS network.")
+                if yes_or_no("Do you want to clean-up the container?"):
+                    return container.remove()
+                
 
             ## INSTRUCTIONS ##
             print(

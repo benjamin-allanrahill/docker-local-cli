@@ -40,7 +40,7 @@ def listRegistry(registry):
     curl_cmd = f'curl -s -X GET https://{registry}/v2/_catalog'
 
     data = json.loads(
-        evalOrDie(curl_cmd, "There was an error getting the images")[0])
+        evalOrDie(curl_cmd, "There was an error getting the images. \nPlease make sure you are connected to the network")[0])
 
     print("\nREPOSITORY \t\t\t\t\t TAGS")
     for repo in data['repositories']:

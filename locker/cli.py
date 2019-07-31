@@ -55,8 +55,7 @@ def main():
     cleanup_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
     cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="[Optional] The container(s) to remove")
     cleanup_parser.add_argument('-r', '--registry', dest='label', default='docker.rdcloud.bms.com:443', help='[Optional] Remove the images labeled with a particular registry')
-
-    #cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
+    cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
 
 
     dropin_parser = subparsers.add_parser('drop-in', help="Run a command inside the container")
@@ -98,10 +97,11 @@ def main():
     stop_parser = subparsers.add_parser('stop', help='Stop a running environment.')
     stop_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
     stop_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="The container to add the files to")
-    stop_parser.add_argument('-r', '--registry', dest='label', default='docker.rdcloud.bms.com:443', help='[Optional] Stop the images labeled with a particular registry')
+    stop_parser.add_argument('-r', '--registry', dest='label', help='[Optional] Stop the images labeled with a particular registry')
     stop_parser.add_argument('--halt', '--slam', dest='halt', default=False, action='store_true', help='[Optional] Force the stop of a running container (uses SIGKILL)')
 
     args = parser.parse_args()
+    print(args)
     
     ROOT = defaultRootPath()
 
@@ -115,7 +115,7 @@ def main():
 
     # --- Run
         if cmd == 'run':
-            image = args.image if args.image else settings.image
+            image = parseImageTag(args.image) if args.image else settings.image
             ports = parsePorts(args.ports) if args.ports else parsePorts(settings.ports)
             mode = args.mode
             keypath = args.keypath if args.keypath else ROOT + '.ssh/'
@@ -144,16 +144,16 @@ def main():
         
     # --- ssh        
         elif cmd == 'ssh':
-            sshIn(getContainers(args)[0], args.entrypoint, args.mode)            
+            sshIn(getContainers(args), args.entrypoint, args.mode)            
         
     # --- add        
         elif cmd == 'add':
             # print(args.dest)
-            add(getContainers(args)[0], ROOT + args.source, args.dest)
+            add(getContainers(args), args.source, args.dest)
         
     # --- grab        
         elif cmd == 'grab':
-            grab(getContainers(args)[0], args.source, ROOT+ args.dest)
+            grab(getContainers(args), args.source, args.dest)
         
     # --- list        
         elif cmd == 'list':
@@ -182,7 +182,7 @@ def getContainers(args, plusStopped=False):
         list
             the container objects asked for 
     ''' 
-    _checkContainerL()
+    _checkContainerL(plusStopped)
     if hasattr(args, 'container') and args.container != None:
         return [d.containers.get(cid) for cid in args.container]
     elif hasattr(args, 'label') and args.label != None:
@@ -193,7 +193,8 @@ def getContainers(args, plusStopped=False):
         # print("ALL containers were specified")
         return d.containers.list(all=plusStopped)
     else:
-        # print("Only the last created container")
+        #print("Only the last created container")
+        #print(d.containers.list(all=plusStopped))
         return d.containers.list(all=plusStopped)[0]
 
 def defaultRootPath():
@@ -293,13 +294,18 @@ def parseRegistry(image, labels):
         labels['registry'] = 'docker'
     return labels
 
-def _checkContainerL():
+def _checkContainerL(stopped):
     '''
         _checkContainerL()
 
         Exit if no containers are running. 
+
+        Parameters:
+        ===========
+        stopped: bool
+            assess stopped containers
     '''    
-    containers = d.containers.list(True)
+    containers = d.containers.list(stopped)
     #print(containers)
     #print(len(containers))
     if len(containers) == 0:
