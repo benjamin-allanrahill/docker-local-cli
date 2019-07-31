@@ -127,10 +127,10 @@ def createAndRun(user, image, ports, mode, keypath, label, cap_add, devices):
 
             ## INSTRUCTIONS ##
             print(
-                f"Access {color('Rstudio', fg='cyan')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['8787/tcp']}"
+                f"Access {color('Rstudio', fg='cyan')} at http://localhost:{ports['8787/tcp']}"
             )
             print(
-                f"Access {color('ssh', fg='yellow')} at http://{socket.gethostbyname(socket.gethostname())}:{ports['22/tcp']}"
+                f"Access {color('ssh', fg='yellow')} at http://localhost:{ports['22/tcp']}"
             )
             if mode == 'ti':  # EXEC IN
                 execute(container, 'bin/bash', 'ti')
