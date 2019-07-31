@@ -23,7 +23,7 @@ def ssh(dport):
             the port locally that maps to the ssh port in the container
     '''
     ssh_cmd = ['ssh', 'domino@localhost', '-p', f'{dport}']
-    evalOrDie(' '.join(ssh_cmd), "There was an error during ssh")
+    subprocess.call(' '.join(ssh_cmd), shell=True)
 
 
 def copyKeys(container, location, user):
