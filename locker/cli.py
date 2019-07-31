@@ -51,14 +51,14 @@ def main():
     add_parser.add_argument('dest', type=str, help='Where you want the file to end up')
 
 
-    cleanup_parser = subparsers.add_parser('clean-up', help="Clean up running containers")
+    cleanup_parser = subparsers.add_parser('cleanup', help="Clean up running containers")
     cleanup_parser.add_argument('-a', '--all', dest='all', action='store_true', help='[Optional] Stop all the containers')
     cleanup_parser.add_argument('-c', '--container', metavar="ID", nargs='*', help="[Optional] The container(s) to remove")
     cleanup_parser.add_argument('-r', '--registry', dest='label', default='docker.rdcloud.bms.com:443', help='[Optional] Remove the images labeled with a particular registry')
     cleanup_parser.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true', help='[Optional] Don\'t prompt; just do.')
 
 
-    dropin_parser = subparsers.add_parser('drop-in', help="Run a command inside the container")
+    dropin_parser = subparsers.add_parser('dropin', help="Run a command inside the container")
     dropin_parser.add_argument('--cmd', dest='entrypoint', default='bash', help='[Optional] The command you would like to start in the container.')
     dropin_parser.add_argument('--container', metavar="ID", help="[Optional] The container to add the files to")
     dropin_parser.add_argument('--mode', dest='mode', choices=['d', 'ti'], default='ti', help='[Optional] Run the command detached or interactive.')
@@ -131,15 +131,15 @@ def main():
         elif cmd == 'stop':
             stop(getContainers(args), mode=args.halt)
         
-    # --- clean-up        
-        elif cmd == 'clean-up':
+    # --- cleanup        
+        elif cmd == 'cleanup':
             yn = yes_or_no(f"This will {color('remove', fg='red')} your containers. Do you want to continue?")
             if not yn:
                 exit(0)
             cleanup(getContainers(args, plusStopped=True), args.quiet)
         
-    # --- drop-in        
-        elif cmd == 'drop-in':
+    # --- dropin        
+        elif cmd == 'dropin':
             dropIn(getContainers(args, plusStopped=False), args.entrypoint, args.mode)
         
     # --- ssh        
