@@ -98,7 +98,17 @@ subcommands:
 
 ### `add`
 
-The `add` subcommand allows the addition of files (from the local machine) into the running container.
+The `add` subcommand allows the addition of files (from the local machine) into the running container. 
+
+#### Git Bash
+
+If you are using Git Bash, you will need to format you POSIX file paths correctly.
+
+See stack overflow article here: [HERE](https://stackoverflow.com/questions/16344985/how-do-i-pass-an-absolute-path-to-the-adb-command-via-git-bash-for-windows)
+
+EXAMPLE: 
+  /tmp/test.txt ==> //tmp\test.txt
+
 ```
 $ locker add --help
 usage: locker add [-h] [--container ID] source dest
